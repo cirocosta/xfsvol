@@ -26,6 +26,7 @@ fmt:
 	cd ./main && gofmt -s -w .
 	cd ./manager && gofmt -s -w .
 	cd ./xfsvolctl && gofmt -s -w .
+	cd ./lib && gofmt -s -w .
 
 
 rootfs-image:
