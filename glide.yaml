@@ -1,0 +1,20 @@
+package: github.com/cirocosta/xfsvol
+import:
+- package: github.com/docker/go-plugins-helpers
+  subpackages:
+  - volume
+- package: github.com/pkg/errors
+  version: v0.8.0
+- package: github.com/sirupsen/logrus
+  version: v1.0.0
+- package: github.com/stretchr/testify
+  version: v1.1.4
+  subpackages:
+  - assert
+- package: gopkg.in/urfave/cli.v1
+  version: v1.19.1
+- package: golang.org/x/sys
+  subpackages:
+  - unix
+- package: github.com/ventu-io/go-shortid
+  version: v1.0
