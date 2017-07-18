@@ -35,7 +35,7 @@ create_xfs_loopback_device() {
 
 	sudo dd if=/dev/zero of=/xfs.1G bs=1M count=1024
 	sudo losetup /dev/loop0 /xfs.1G
-	sudo mkfs -t xfs -n ftype=1 /dev/loop0
+	sudo mkfs -t xfs /dev/loop0
 	sudo mkdir -p /mnt/xfs
 	sudo mount /dev/loop0 /mnt/xfs -o pquota
 
