@@ -10,7 +10,7 @@ main() {
 
 install_dependencies() {
   sudo apt update -y
-  sudo apt install -y xfsprogs
+  sudo apt install -y xfsprogs tree
 }
 
 create_testing_directory() {
