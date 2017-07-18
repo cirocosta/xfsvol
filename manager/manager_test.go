@@ -7,8 +7,11 @@ import (
 	"testing"
 
 	"github.com/cirocosta/xfsvol/manager"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+const XfsMount = "/mnt/xfs/tmp"
 
 func TestNew_failsWithoutRootSpecified(t *testing.T) {
 	_, err := manager.New(manager.Config{})
@@ -30,7 +33,7 @@ func TestNew_failsWithNonAbsolutePath(t *testing.T) {
 }
 
 func TestNew_succeedsWithWriteableAbsolutePath(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -41,7 +44,7 @@ func TestNew_succeedsWithWriteableAbsolutePath(t *testing.T) {
 }
 
 func TestCreate_failsIfEmptyPath(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -50,7 +53,7 @@ func TestCreate_failsIfEmptyPath(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = m.Create("")
+	_, err = m.Create(manager.Volume{})
 	assert.Error(t, err)
 }
 
@@ -62,7 +65,7 @@ func TestCreate_failsWithWeirdCharacters(t *testing.T) {
 		"a b c",
 	}
 
-	dir, err := ioutil.TempDir("", "")
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -72,13 +75,13 @@ func TestCreate_failsWithWeirdCharacters(t *testing.T) {
 	assert.NoError(t, err)
 
 	for _, path := range weirdPaths {
-		_, err := m.Create(path)
+		_, err := m.Create(manager.Volume{Name: path})
 		assert.Error(t, err)
 	}
 }
 
-func TestCreate_succeedsWithNormalPath(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+func TestCreate_succeedsWithNormalPathAndSize(t *testing.T) {
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -87,7 +90,10 @@ func TestCreate_succeedsWithNormalPath(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	absPath, err := m.Create("abc")
+	absPath, err := m.Create(manager.Volume{
+		Name: "abc",
+		Size: manager.MustFromHumanSize("10M"),
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, path.Join(dir, "abc"), absPath)
 
@@ -97,7 +103,7 @@ func TestCreate_succeedsWithNormalPath(t *testing.T) {
 }
 
 func TestList_canList0Directorise(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -111,8 +117,8 @@ func TestList_canList0Directorise(t *testing.T) {
 	assert.Len(t, dirs, 0)
 }
 
-func TestList_listsDirectories(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+func TestCreate_cantCreateWithEmptySize(t *testing.T) {
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -121,21 +127,46 @@ func TestList_listsDirectories(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = m.Create("abc")
+	_, err = m.Create(manager.Volume{
+		Name: "abc",
+		Size: 0,
+	})
+	assert.Error(t, err)
+}
+
+func TestList_listsDirectories(t *testing.T) {
+	dir, err := ioutil.TempDir(XfsMount, "")
+	assert.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	m, err := manager.New(manager.Config{
+		Root: dir,
+	})
 	assert.NoError(t, err)
 
-	_, err = m.Create("def")
+	_, err = m.Create(manager.Volume{
+		Name: "abc",
+		Size: manager.MustFromHumanSize("10M"),
+	})
+	assert.NoError(t, err)
+
+	_, err = m.Create(manager.Volume{
+		Name: "def",
+		Size: manager.MustFromHumanSize("10M"),
+	})
 	assert.NoError(t, err)
 
 	dirs, err := m.List()
 	assert.NoError(t, err)
 	assert.Len(t, dirs, 2)
-	assert.Equal(t, "abc", dirs[0])
-	assert.Equal(t, "def", dirs[1])
+	assert.Equal(t, "abc", dirs[0].Name)
+	assert.Equal(t, "10 MB", manager.HumanSize(dirs[0].Size))
+	assert.Equal(t, "def", dirs[1].Name)
+	assert.Equal(t, "10 MB", manager.HumanSize(dirs[1].Size))
 }
 
 func TestGet_doesntErrorIfNotFound(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -150,7 +181,7 @@ func TestGet_doesntErrorIfNotFound(t *testing.T) {
 }
 
 func TestGet_findsDirectory(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -159,7 +190,10 @@ func TestGet_findsDirectory(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	_, err = m.Create("abc")
+	_, err = m.Create(manager.Volume{
+    Name: "abc",
+    Size: manager.MustFromHumanSize("10 MB"),
+  })
 	assert.NoError(t, err)
 
 	mp, found, err := m.Get("abc")
@@ -169,7 +203,7 @@ func TestGet_findsDirectory(t *testing.T) {
 }
 
 func TestDelete_succeedsForExistentVolume(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
@@ -178,7 +212,10 @@ func TestDelete_succeedsForExistentVolume(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	absPath, err := m.Create("abc")
+	absPath, err := m.Create(manager.Volume{
+    Name: "abc",
+    Size: manager.MustFromHumanSize("10 MB"),
+  })
 	assert.NoError(t, err)
 	assert.Equal(t, path.Join(dir, "abc"), absPath)
 
@@ -195,7 +232,7 @@ func TestDelete_succeedsForExistentVolume(t *testing.T) {
 }
 
 func TestDelete_failsForInexistentVolume(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 

@@ -13,6 +13,8 @@ func main() {
 	app.Usage = "Controls the 'xfsvol' volume plugin"
 	app.Commands = []cli.Command{
 		commands.Ls,
+		commands.Create,
+		commands.Delete,
 	}
 	app.Run(os.Args)
 }

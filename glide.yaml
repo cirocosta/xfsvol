@@ -18,3 +18,5 @@ import:
   - unix
 - package: github.com/ventu-io/go-shortid
   version: v1.0
+- package: github.com/docker/go-units
+  version: v0.3.1
