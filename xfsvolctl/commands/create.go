@@ -20,31 +20,30 @@ var Create = cli.Command{
     Examples:
 
       1. create a volume with an upper limit of 10M:
-        lsblk
-				NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
-				loop0    7:0    0     2G  0 loop /mnt/xfs
 
-				mount | grep xfs
-				/dev/loop0 on /mnt/xfs type xfs (rw,relatime,attr2,inode64,prjquota)
- 
-        xfsvolctl create --root /mnt/xfs --name myvol --size 10M
+         lsblk
+         NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+         loop0    7:0    0     2G  0 loop /mnt/xfs
+         
+         mount | grep xfs
+         /dev/loop0 on /mnt/xfs type xfs (rw,relatime,attr2,inode64,prjquota)
+         
+         xfsvolctl create --root /mnt/xfs --name myvol --size 10M
 
     Note:
-      - In order to have the creation functioning you must
-        first have a mount point in the filesystem that
-        is mounted on top of XFS and has 'pquota' set.
+      -  In order to have the creation functioning you must
+         first have a mount point in the filesystem that
+         is mounted on top of XFS and has 'pquota' set.
     `,
   Flags: []cli.Flag{
     cli.StringFlag{
       Name: "name, n",
       Usage: "Name of the volume to create",
     },
-
     cli.StringFlag{
       Name: "size, s",
       Usage: "Size of the XFS project quota to apply",
     },
-
     cli.StringFlag{
       Name: "root, r",
       Usage: "Root of the volume creation",
