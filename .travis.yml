@@ -1,7 +1,17 @@
 language: 'go'
+
 sudo: false
+
 go:
   - 'master'
+
+addons:
+  apt:
+    packages:
+      - 'xfsprogs'
+
+install:
+  - './.travis/setup.sh'
 
 script:
   - 'make test'
