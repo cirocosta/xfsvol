@@ -1,14 +1,9 @@
 language: 'go'
 
-sudo: false
+sudo: 'required'
 
 go:
   - 'master'
-
-addons:
-  apt:
-    packages:
-      - 'xfsprogs'
 
 install:
   - './.travis/setup.sh'

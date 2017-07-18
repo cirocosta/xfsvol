@@ -3,8 +3,14 @@
 set -o errexit
 
 main() {
+  install_dependencies
 	create_xfs_loopback_device
 	create_testing_directory
+}
+
+install_dependencies() {
+  sudo apt update -y
+  sudo apt install -y xfsprogs
 }
 
 create_testing_directory() {
