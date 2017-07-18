@@ -1,5 +1,6 @@
 // +build linux
 
+// Extracted from https://github.com/moby/moby/blob/32ada4dcf12fe11e8d87820e851b8c2172761e29/daemon/graphdriver/quota/projectquota.go
 //
 // projectquota.go - implements XFS project quota controls
 // for setting quota limits on a newly created directory.

@@ -191,9 +191,9 @@ func TestGet_findsDirectory(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = m.Create(manager.Volume{
-    Name: "abc",
-    Size: manager.MustFromHumanSize("10 MB"),
-  })
+		Name: "abc",
+		Size: manager.MustFromHumanSize("10 MB"),
+	})
 	assert.NoError(t, err)
 
 	mp, found, err := m.Get("abc")
@@ -213,9 +213,9 @@ func TestDelete_succeedsForExistentVolume(t *testing.T) {
 	assert.NoError(t, err)
 
 	absPath, err := m.Create(manager.Volume{
-    Name: "abc",
-    Size: manager.MustFromHumanSize("10 MB"),
-  })
+		Name: "abc",
+		Size: manager.MustFromHumanSize("10 MB"),
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, path.Join(dir, "abc"), absPath)
 
