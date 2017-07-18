@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/cirocosta/xfsvol/manager"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
