@@ -199,7 +199,6 @@ func setProjectQuota(backingFsBlockDev string, projectID uint32, quota Quota) er
 
 // GetQuota - get the quota limits of a directory that was configured with SetQuota
 func (q *Control) GetQuota(targetPath string, quota *Quota) error {
-
 	projectID, ok := q.quotas[targetPath]
 	if !ok {
 		return fmt.Errorf("quota not found for path : %s", targetPath)

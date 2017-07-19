@@ -1,3 +1,8 @@
+all: build
+
+build:
+	cd ./xfsvolctl && go build -v
+
 install:
 	cd ./xfsvolctl && go install -v
 
@@ -10,4 +15,4 @@ fmt:
 	cd ./main && go fmt
 	cd ./xfsvolctl && go fmt
 
-.PHONY: install
+.PHONY: all install test build fmt
