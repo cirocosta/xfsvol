@@ -2,48 +2,17 @@ package manager_test
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 
+	"github.com/cirocosta/xfsvol/lib"
 	"github.com/cirocosta/xfsvol/manager"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 const XfsMount = "/mnt/xfs/tmp"
-
-// WriteBytes writes a given number of bytes in the form
-// of 'character'  to a given writer.
-func WriteBytes(writer io.Writer, character byte, remaining uint64) (err error) {
-	var chunkSize = uint64((1 << 12))
-	var buf = make([]byte, chunkSize)
-	var n = 0
-
-	for ndx, _ := range buf {
-		buf[ndx] = character
-	}
-
-	for remaining > 0 {
-		if remaining < chunkSize {
-			chunkSize = remaining
-		}
-
-		n, err = writer.Write(buf[:chunkSize])
-		if err != nil {
-			err = errors.Wrapf(err,
-				"Couldn't write buf to writer - remaining %d",
-				remaining)
-			return
-		}
-
-		remaining -= uint64(n)
-	}
-
-	return
-}
 
 func TestNew_failsWithoutRootSpecified(t *testing.T) {
 	_, err := manager.New(manager.Config{})
@@ -137,6 +106,7 @@ func TestCreate_succeedsWithNormalPathAndSize(t *testing.T) {
 func TestCreate_actuallyHasQuotaEnforced(t *testing.T) {
 	dir, err := ioutil.TempDir(XfsMount, "")
 	assert.NoError(t, err)
+	defer os.RemoveAll(dir)
 
 	m, err := manager.New(manager.Config{
 		Root: dir,
@@ -155,7 +125,7 @@ func TestCreate_actuallyHasQuotaEnforced(t *testing.T) {
 	defer fd.Close()
 
 	fmt.Println(filePath)
-	assert.Error(t, WriteBytes(fd, 'c', 20*(1<<20)))
+	assert.Error(t, lib.WriteBytes(fd, 'c', 20*(1<<20)))
 }
 
 func TestList_canList0Directorise(t *testing.T) {
