@@ -8,6 +8,7 @@ install:
 
 test:
 	cd ./manager && go test -v
+	cd ./lib && go test -v
 
 fmt:
 	cd ./manager && go fmt
