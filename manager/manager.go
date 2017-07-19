@@ -8,21 +8,34 @@ import (
 
 	"github.com/cirocosta/xfsvol/lib"
 	"github.com/pkg/errors"
-	_ "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
+
+	log "github.com/sirupsen/logrus"
 )
 
+// Manager is the entity responsible for managing
+// volumes under a given base path. It takes the
+// responsability of 'CRUD'ing these volumes.
 type Manager struct {
+	logger   *log.Entry
 	quotaCtl *lib.Control
 	root     string
 }
 
+// Config represents the configuration to
+// create a manager. It takes a root directory
+// that is used to create a block device that
+// controls project quotas bellow it.
 type Config struct {
 	Root string
 }
 
+// Volume represents a volume under a given
+// root path that has a project quota associated
+// with it.
 type Volume struct {
 	Name string
+	Path string
 	Size uint64
 }
 
@@ -39,6 +52,8 @@ func New(cfg Config) (manager Manager, err error) {
 		err = errors.Errorf("Root not specified.")
 		return
 	}
+
+	manager.logger = log.WithField("root", cfg.Root)
 
 	if !filepath.IsAbs(cfg.Root) {
 		err = errors.Errorf(
@@ -63,6 +78,7 @@ func New(cfg Config) (manager Manager, err error) {
 		return
 	}
 
+	manager.logger.Debug("manager initialized")
 	manager.quotaCtl = quotaCtl
 	manager.root = cfg.Root
 	return
@@ -92,6 +108,7 @@ func (m Manager) List() (vols []Volume, err error) {
 			vols = append(vols, Volume{
 				Name: file.Name(),
 				Size: quota.Size,
+				Path: absPath,
 			})
 		}
 	}
@@ -99,7 +116,9 @@ func (m Manager) List() (vols []Volume, err error) {
 	return
 }
 
-func (m Manager) Get(name string) (absPath string, found bool, err error) {
+func (m Manager) Get(name string) (vol Volume, found bool, err error) {
+	var absPath string
+
 	if !isValidName(name) {
 		err = ErrInvalidName
 		return
@@ -115,7 +134,20 @@ func (m Manager) Get(name string) (absPath string, found bool, err error) {
 	for _, file := range files {
 		if file.IsDir() && file.Name() == name {
 			found = true
+			quota := lib.Quota{}
 			absPath = filepath.Join(m.root, name)
+
+			err = m.quotaCtl.GetQuota(absPath, &quota)
+			if err != nil {
+				err = errors.Wrapf(err,
+					"Couldn't retrieve quota for directory %s",
+					file.Name())
+				return
+			}
+
+			vol.Name = filepath.Base(absPath)
+			vol.Size = quota.Size
+			vol.Path = absPath
 			return
 		}
 	}
@@ -124,6 +156,10 @@ func (m Manager) Get(name string) (absPath string, found bool, err error) {
 }
 
 func (m Manager) Create(vol Volume) (absPath string, err error) {
+	var log = m.logger.
+		WithField("name", vol.Name).
+		WithField("size", vol.Size)
+
 	if vol.Size == 0 {
 		err = ErrEmptyQuota
 		return
@@ -134,11 +170,13 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 		return
 	}
 
+	log.Debug("creating volume")
 	absPath = filepath.Join(m.root, vol.Name)
 	err = os.MkdirAll(absPath, 0755)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't create directory %s", absPath)
+		log.WithError(err).Error("volume creation failed")
 		return
 	}
 
@@ -149,10 +187,12 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 		err = errors.Wrapf(err,
 			"Couldn't set quota for volume name=%s size=%d",
 			vol.Name, vol.Size)
+		log.WithError(err).Error("volume creation failed")
 		os.RemoveAll(absPath)
 		return
 	}
 
+	log.Debug("volume created")
 	return
 }
 
@@ -162,7 +202,7 @@ func (m Manager) Delete(name string) (err error) {
 		return
 	}
 
-	abs, found, err := m.Get(name)
+	vol, found, err := m.Get(name)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Errored retrieving abs path for name %s",
@@ -175,11 +215,11 @@ func (m Manager) Delete(name string) (err error) {
 		return
 	}
 
-	err = os.RemoveAll(abs)
+	err = os.RemoveAll(vol.Path)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Errored removing volume named %s at path %s",
-			name, abs)
+			name, vol.Path)
 		return
 	}
 

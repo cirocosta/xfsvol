@@ -1,5 +1,5 @@
 {
-    "Description": "Docker plugin to manage NFS-mounted volumes",
+    "Description": "Docker plugin to manage XFS-mounted volumes",
     "Documentation": "https://github.com/cirocosta/xfsvol",
     "Entrypoint": [
         "/xfsvol"
@@ -27,11 +27,11 @@
     },
     "Mounts": [
         {
-            "Destination": "/mnt/nfs",
+            "Destination": "/mnt/xfs/volumes",
             "Options": [
                 "bind"
             ],
-            "Source": "/mnt/nfs",
+            "Source": "/mnt/xfs/volumes",
             "Type": "bind"
         }
     ],

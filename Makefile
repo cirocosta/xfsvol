@@ -5,6 +5,7 @@ build:
 
 install:
 	cd ./xfsvolctl && go install -v
+	cd ./main && go install -v
 
 test:
 	cd ./manager && go test -v

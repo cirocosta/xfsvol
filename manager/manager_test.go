@@ -222,10 +222,10 @@ func TestGet_findsDirectory(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mp, found, err := m.Get("abc")
+	vol, found, err := m.Get("abc")
 	assert.NoError(t, err)
 	assert.True(t, found)
-	assert.Equal(t, path.Join(dir, "abc"), mp)
+	assert.Equal(t, path.Join(dir, "abc"), vol.Path)
 }
 
 func TestDelete_succeedsForExistentVolume(t *testing.T) {

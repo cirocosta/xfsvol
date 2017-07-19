@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	HostMountPoint = "/mnt/nfs"
+	HostMountPoint = "/mnt/xfs/volumes"
+	DefaultSize    = "1GiB"
 )
 
 type nfsVolDriver struct {
@@ -48,10 +49,28 @@ func (d nfsVolDriver) Create(req v.Request) (resp v.Response) {
 		WithField("opts", req.Options)
 	logger.Debug("start")
 
+	size, present := req.Options["size"]
+	if !present {
+		size = DefaultSize
+	}
+
+	sizeInBytes, err := manager.FromHumanSize(size)
+	if err != nil {
+		err = errors.Errorf(
+			"couldn't convert specified size [%s] into bytes",
+			size)
+		logger.WithError(err).Error("couldn't create volume")
+		resp.Err = err.Error()
+		return
+	}
+
 	d.Lock()
 	defer d.Unlock()
 
-	abs, err := d.manager.Create(req.Name)
+	abs, err := d.manager.Create(manager.Volume{
+		Name: req.Name,
+		Size: sizeInBytes,
+	})
 	if err != nil {
 		logger.WithError(err).Error("couldn't create volume")
 		resp.Err = err.Error()
@@ -60,7 +79,7 @@ func (d nfsVolDriver) Create(req v.Request) (resp v.Response) {
 
 	logger.
 		WithField("abs", abs).
-		Debug("finish")
+		Debug("finished creating volume")
 	return
 }
 
@@ -75,22 +94,22 @@ func (d nfsVolDriver) List(req v.Request) (resp v.Response) {
 	d.Lock()
 	defer d.Unlock()
 
-	dirs, err := d.manager.List()
+	vols, err := d.manager.List()
 	if err != nil {
 		logger.WithError(err).Error("couldn't list volumes")
 		resp.Err = err.Error()
 		return
 	}
 
-	resp.Volumes = make([]*v.Volume, len(dirs))
-	for idx, dir := range dirs {
+	resp.Volumes = make([]*v.Volume, len(vols))
+	for idx, vol := range vols {
 		resp.Volumes[idx] = &v.Volume{
-			Name: dir,
+			Name: vol.Name,
 		}
 	}
 
 	logger.
-		WithField("number-of-volumes", len(dirs)).
+		WithField("number-of-volumes", len(vols)).
 		Debug("finish")
 	return
 }
@@ -106,7 +125,7 @@ func (d nfsVolDriver) Get(req v.Request) (resp v.Response) {
 	d.Lock()
 	defer d.Unlock()
 
-	mp, found, err := d.manager.Get(req.Name)
+	vol, found, err := d.manager.Get(req.Name)
 	if err != nil {
 		logger.WithError(err).Error("errored retrieving path for volume")
 		resp.Err = err.Error()
@@ -121,11 +140,11 @@ func (d nfsVolDriver) Get(req v.Request) (resp v.Response) {
 
 	resp.Volume = &v.Volume{
 		Name:       req.Name,
-		Mountpoint: mp,
+		Mountpoint: vol.Path,
 	}
 
 	logger.
-		WithField("mountpoint", mp).
+		WithField("mountpoint", vol.Path).
 		Debug("finish")
 	return
 }
@@ -163,7 +182,7 @@ func (d nfsVolDriver) Path(req v.Request) (resp v.Response) {
 	d.Lock()
 	defer d.Unlock()
 
-	mp, found, err := d.manager.Get(req.Name)
+	vol, found, err := d.manager.Get(req.Name)
 	if err != nil {
 		logger.WithError(err).Error("errored retrieving path for volume")
 		resp.Err = err.Error()
@@ -178,7 +197,7 @@ func (d nfsVolDriver) Path(req v.Request) (resp v.Response) {
 
 	logger.Debug("finish")
 
-	resp.Mountpoint = mp
+	resp.Mountpoint = vol.Path
 	return
 }
 
@@ -193,7 +212,7 @@ func (d nfsVolDriver) Mount(req v.MountRequest) (resp v.Response) {
 	d.Lock()
 	defer d.Unlock()
 
-	mp, found, err := d.manager.Get(req.Name)
+	vol, found, err := d.manager.Get(req.Name)
 	if err != nil {
 		logger.WithError(err).Error("errored retrieving path for volume")
 		resp.Err = err.Error()
@@ -207,7 +226,7 @@ func (d nfsVolDriver) Mount(req v.MountRequest) (resp v.Response) {
 	}
 
 	logger.Debug("finish")
-	resp.Mountpoint = mp
+	resp.Mountpoint = vol.Path
 	return
 }
 
