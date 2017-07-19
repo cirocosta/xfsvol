@@ -51,5 +51,18 @@ dd if=/dev/zero of=/myvolume1/file bs=1M count=100
 
 ```
 docker volume ls
+DRIVER              VOLUME NAME
+xfsvol:latest       myvolume1 (1.004MB)
+local               dockerdev-go-pkg-cache-gopath
+local               dockerdev-go-pkg-cache-goroot-linux_amd64
+local               dockerdev-go-pkg-cache-goroot-linux_amd64_netgo
+```
+
+and the `xfsvolctl` utility:
+
+```
+sudo /usr/bin/xfsvolctl ls --root /mnt/xfs/volumes/
+NAME   QUOTA
+ciro   1.004 MB
 ```
 
