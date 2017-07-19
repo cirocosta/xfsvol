@@ -66,3 +66,29 @@ NAME   QUOTA
 ciro   1.004 MB
 ```
 
+### `xfsvolctl`
+
+This tool is made to help inspect the project quotas created under a given root path as well as create/delete others. It's usage is documented under `--help`:
+
+```
+xfsvolctl --help
+NAME:
+   xfsvolctl - Controls the 'xfsvol' volume plugin
+
+USAGE:
+   xfsvolctl [global options] command [command options] [arguments...]
+
+VERSION:
+   0.0.0
+
+COMMANDS:
+     ls       Lists the volumes managed by 'xfsvol' plugin
+     create   Creates a volume with XFS project quota enforcement
+     delete   Deletes a volume managed by 'xfsvol' plugin
+     help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h     show help
+   --version, -v  print the version
+```
+
