@@ -1,4 +1,4 @@
-FROM golang:alpine as builder
+FROM golang as builder
 
 ADD ./main /go/src/github.com/cirocosta/xfsvol/main
 ADD ./vendor /go/src/github.com/cirocosta/xfsvol/vendor
@@ -8,11 +8,12 @@ ADD ./lib /go/src/github.com/cirocosta/xfsvol/lib
 WORKDIR /go/src/github.com/cirocosta/xfsvol
 
 RUN set -ex && \
-  apk add --update gcc musl-dev make
+  apt update -y && \
+  apt install -y xfsprogs build-essential
 
 RUN set -ex && \
   cd ./main && \
-  go build -v  && \
+  go build -v -a -ldflags '-extldflags "-static"' && \
   mv ./main /usr/bin/xfsvol
 
 FROM busybox
