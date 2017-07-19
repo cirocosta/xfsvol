@@ -4,7 +4,7 @@
 
 <br/>
 
-### Quickstart
+## Quickstart
 
 1. Create a mountpoint at `/mnt/xfs` and a directory `/mnt/xfs/volumes`. 
 
@@ -66,7 +66,7 @@ NAME   QUOTA
 ciro   1.004 MB
 ```
 
-### `xfsvolctl`
+## `xfsvolctl`
 
 This tool is made to help inspect the project quotas created under a given root path as well as create/delete others. It's usage is documented under `--help`:
 
