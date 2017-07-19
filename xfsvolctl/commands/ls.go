@@ -67,7 +67,7 @@ var Ls = cli.Command{
 		fmt.Fprintln(w, "NAME\tQUOTA")
 
 		for _, vol := range vols {
-			fmt.Fprintln(w, "%s\t%s",
+			fmt.Fprintf(w, "%s\t%s\n",
 				vol.Name,
 				manager.HumanSize(vol.Size))
 		}
