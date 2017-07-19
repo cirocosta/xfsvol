@@ -9,5 +9,5 @@ install:
   - './.travis/setup.sh'
 
 script:
-  - 'sudo make test'
+  - 'sudo /home/travis/.gimme/versions/go/bin/go test -v'
 
