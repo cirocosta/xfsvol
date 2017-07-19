@@ -11,7 +11,7 @@ import (
 var Create = cli.Command{
 	Name:  "create",
 	Usage: "Creates a volume with XFS project quota enforcement",
-  Description: `Creates a docker volume with XFS pquotas.
+	Description: `Creates a docker volume with XFS pquotas.
     XFS project quota allows one to implement directory
     tree quota and accounting. This allows one to specify
     an intended size to limit the size of the content below
@@ -35,59 +35,61 @@ var Create = cli.Command{
          first have a mount point in the filesystem that
          is mounted on top of XFS and has 'pquota' set.
     `,
-  Flags: []cli.Flag{
-    cli.StringFlag{
-      Name: "name, n",
-      Usage: "Name of the volume to create",
-    },
-    cli.StringFlag{
-      Name: "size, s",
-      Usage: "Size of the XFS project quota to apply",
-    },
-    cli.StringFlag{
-      Name: "root, r",
-      Usage: "Root of the volume creation",
-    },
-  },
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name: "name, n",
+			Usage: "Name of the volume to create",
+		},
+		cli.StringFlag{
+			Name: "size, s",
+			Usage: "Size of the XFS project quota to apply",
+		},
+		cli.StringFlag{
+			Name: "root, r",
+			Usage: "Root of the volume creation",
+		},
+	},
 	Action: func (c *cli.Context) (err error) {
-    var name = c.String("name")
-    var size = c.String("size")
-    var root = c.String("root")
+		var name = c.String("name")
+		var size = c.String("size")
+		var root = c.String("root")
 
-    if name == "" || size == "" || root == "" {
-	cli.ShowCommandHelp(c, "create")
-	err = errors.Errorf("All parameters must be set.")
-	return
-    }
+		if name == "" || size == "" || root == "" {
+			cli.ShowCommandHelp(c, "create")
+			err = errors.Errorf("All parameters must be set.")
+			return
+		}
 
-    mgr, err := manager.New(manager.Config{
-      Root: root,
-    })
-    if err != nil {
-      err = errors.Wrapf(err,
-        "Couldn't initiate manager")
-      return
-    }
+		mgr, err := manager.New(manager.Config{
+			Root: root,
+		})
+		if err != nil {
+			err = errors.Wrapf(err,
+			"Couldn't initiate manager")
+			return
+		}
 
-    sizeInBytes, err := manager.FromHumanSize(size)
-    if err != nil {
-      err = errors.Wrapf(err,
-        "Size supplied by user can't be converted to uint64 bytes")
-      return
-    }
+		sizeInBytes, err := manager.FromHumanSize(size)
+		if err != nil {
+			err = errors.Wrapf(err,
+				"Size supplied by user can't be converted to uint64 bytes")
+			return
+		}
 
-    location, err := mgr.Create(manager.Volume{
-      Name: name,
-      Size: sizeInBytes,
-    })
-    if err != nil {
-      err = errors.Wrapf(err,
-        "Couldn't create volume name=%s bytes=%d",
-        name, sizeInBytes)
-      return
-    }
+		location, err := mgr.Create(manager.Volume{
+			Name: name,
+			Size: sizeInBytes,
+		})
+		if err != nil {
+			err = errors.Wrapf(err,
+				"Couldn't create volume name=%s bytes=%d",
+			name, sizeInBytes)
+		return
+		}
 
-    log.WithField("location", location).Info("volume created")
+		log.
+			WithField("location", location).
+			Info("volume created")
 		return
 	},
 }

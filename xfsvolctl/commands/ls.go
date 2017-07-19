@@ -13,7 +13,7 @@ import (
 var Ls = cli.Command{
 	Name:  "ls",
 	Usage: "Lists the volumes managed by 'xfsvol' plugin",
-  Description: `Lists the volumes created with XFS pquotas.
+	Description: `Lists the volumes created with XFS pquotas.
     Retrieve a list of the volumes created by 'xfsvol' Docker
     plugin or the 'xfsvolctl' command.
 
@@ -30,45 +30,48 @@ var Ls = cli.Command{
 
        NAME      QUOTA
        myvol     10M
-  `,
-  Flags: []cli.Flag{
-    cli.StringFlag{
-      Name: "root, r",
-      Usage: "Root of the volume listing",
-    },
-  },
-  Action: func (c *cli.Context) (err error) {
-    var root = c.String("root")
-    if root == "" {
-	cli.ShowCommandHelp(c, "ls")
-      err = errors.Errorf("All parameters must be set.")
-      return
-    }
+	`,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name: "root, r",
+			Usage: "Root of the volume listing",
+		},
+	},
+	Action: func (c *cli.Context) (err error) {
+		var root = c.String("root")
+		if root == "" {
+			cli.ShowCommandHelp(c, "ls")
+			err = errors.Errorf("All parameters must be set.")
+			return
+		}
 
-    mgr, err := manager.New(manager.Config{
-      Root: root,
-    })
-    if err != nil {
-      err = errors.Wrapf(err,
-        "Couldn't initiate manager")
-      return
-    }
+		mgr, err := manager.New(manager.Config{
+			Root: root,
+		})
+		if err != nil {
+			err = errors.Wrapf(err,
+				"Couldn't initiate manager")
+			return
+		}
 
-    vols, err := mgr.List()
-    if err != nil {
-      err = errors.Wrapf(err,
-        "Couldn't list volumes under root %s", root)
-      return
-    }
+		vols, err := mgr.List()
+		if err != nil {
+			err = errors.Wrapf(err,
+				"Couldn't list volumes under root %s",
+				root)
+			return
+		}
 
-    w := new(tabwriter.Writer)
-    w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-    fmt.Fprintln(w, "NAME\tQUOTA")
-    for _, vol := range vols {
-      fmt.Fprintln(w, "%s\t%s", vol.Name, manager.HumanSize(vol.Size))
-    }
-    w.Flush()
+		w := new(tabwriter.Writer)
+		w.Init(os.Stdout, 0, 8, 0, '\t', 0)
+		fmt.Fprintln(w, "NAME\tQUOTA")
 
-    return
-  },
+		for _, vol := range vols {
+			fmt.Fprintln(w, "%s\t%s",
+				vol.Name,
+				manager.HumanSize(vol.Size))
+		}
+		w.Flush()
+		return
+	},
 }
