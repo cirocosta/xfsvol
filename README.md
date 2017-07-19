@@ -25,6 +25,10 @@ docker plugin install \
         --grant-all-permissions \
         --alias xfsvol \
         cirocosta/xfsvol
+
+docker plugin ls
+ID                  NAME                DESCRIPTION                                   ENABLED
+06545b643c6a        xfsvol:latest       Docker plugin to manage XFS-mounted volumes   true
 ```
 
 3. Create a named volume
