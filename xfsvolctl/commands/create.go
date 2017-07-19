@@ -16,7 +16,7 @@ var Create = cli.Command{
     tree quota and accounting. This allows one to specify
     an intended size to limit the size of the content below
     a given tree.
-    
+
     Examples:
 
       1. create a volume with an upper limit of 10M:
@@ -24,10 +24,10 @@ var Create = cli.Command{
          lsblk
          NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
          loop0    7:0    0     2G  0 loop /mnt/xfs
-         
+
          mount | grep xfs
          /dev/loop0 on /mnt/xfs type xfs (rw,relatime,attr2,inode64,prjquota)
-         
+
          xfsvolctl create --root /mnt/xfs --name myvol --size 10M
 
     Note:
@@ -55,8 +55,9 @@ var Create = cli.Command{
     var root = c.String("root")
 
     if name == "" || size == "" || root == "" {
-      err = errors.Errorf("All parameters must be set.")
-      return
+	cli.ShowCommandHelp(c, "create")
+	err = errors.Errorf("All parameters must be set.")
+	return
     }
 
     mgr, err := manager.New(manager.Config{
