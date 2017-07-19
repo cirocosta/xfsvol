@@ -4,3 +4,52 @@
 
 <br/>
 
+### Quickstart
+
+1. Create a mountpoint at `/mnt/xfs` and a directory `/mnt/xfs/volumes`. 
+
+For testing purposes this mountpoint can be a loopback device (note: use a loopback device for testing purposes only).
+
+```sh
+sudo dd if=/dev/zero of=/xfs.1G bs=1M count=1024
+sudo losetup /dev/loop0 /xfs.1G
+sudo mkfs -t xfs -n ftype=1 /dev/loop0
+sudo mkdir -p /mnt/xfs/volumes
+sudo mount /dev/loop0 /mnt/xfs -o pquota
+```
+
+2. Install the plugin
+
+```
+docker plugin install \
+        --grant-all-permissions \
+        --alias xfsvol \
+        cirocosta/xfsvol
+```
+
+3. Create a named volume
+
+```
+docker volume create \
+        --driver xfsvol \
+        --opt size=10M \
+        myvolume1
+```
+
+4. Run a container with the volume attached
+
+```
+docker run -it \
+        -v myvolume1:/myvolume1 \
+        alpine /bin/sh
+
+dd if=/dev/zero of=/myvolume1/file bs=1M count=100
+(fail!)
+```
+
+5. Check the volumes list
+
+```
+docker volume ls
+```
+
