@@ -5,6 +5,7 @@ RUN set -ex && \
   apt install -y xfsprogs build-essential
 
 ADD ./main /go/src/github.com/cirocosta/xfsvol/main
+ADD ./VERSION /go/src/github.com/cirocosta/xfsvol/main/VERSION
 ADD ./vendor /go/src/github.com/cirocosta/xfsvol/vendor
 ADD ./manager /go/src/github.com/cirocosta/xfsvol/manager
 ADD ./lib /go/src/github.com/cirocosta/xfsvol/lib
