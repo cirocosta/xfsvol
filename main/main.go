@@ -15,10 +15,18 @@ const (
 	logFileDestination = "/var/log/xfsvol/plugin.log"
 )
 
+var (
+	version string = "master-dev"
+)
+
 func main() {
 	if os.Getenv("DEBUG") == "1" {
 		log.SetLevel(log.DebugLevel)
 	}
+
+	log.
+		WithField("version", version).
+		Info("Initiating XFSVOL plugin")
 
 	f, err := os.Create(logFileDestination)
 	if err != nil {

@@ -13,8 +13,11 @@ WORKDIR /go/src/github.com/cirocosta/xfsvol
 
 RUN set -ex && \
   cd ./main && \
-  go build -v -a -ldflags '-extldflags "-static"' && \
+  go build \
+        -tags netgo -v -a \
+        -ldflags "-X main.version=$(cat ./VERSION) -extldflags \"-static\"" && \
   mv ./main /usr/bin/xfsvol
+
 
 FROM busybox
 COPY --from=builder /usr/bin/xfsvol /xfsvol

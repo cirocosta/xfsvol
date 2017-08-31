@@ -1,20 +1,21 @@
-ROOTFS_IMAGE		:= cirocosta/xfsvol-rootfs
-ROOTFS_CONTAINER	:= rootfs
-PLUGIN_NAME			:= xfsvol
-PLUGIN_FULL_NAME	:= cirocosta/xfsvol
-PLUGIN_ID			:= $(shell docker plugin inspect $(PLUGIN_NAME) --format '{{ .ID }}')
+VERSION				:=	$(shell cat ./VERSION)
+ROOTFS_IMAGE		:=	cirocosta/xfsvol-rootfs
+ROOTFS_CONTAINER	:=	rootfs
+PLUGIN_NAME			:=	xfsvol
+PLUGIN_FULL_NAME	:=	cirocosta/xfsvol
+PLUGIN_ID			:=	$(shell docker plugin inspect $(PLUGIN_NAME) --format '{{ .ID }}')
 
 
 all: build
 
 
 build:
-	cd ./xfsvolctl && go build -v
+	cd ./xfsvolctl && go build -ldflags "-X main.version=$(VERSION)" -v
 
 
 install:
-	cd ./xfsvolctl && go install -v
-	cd ./main && go install -v
+	cd ./xfsvolctl && go install -ldflags "-X main.version=$(VERSION)" -v
+	cd ./main && go install -ldflags "-X main.version=$(VERSION)" -v
 
 
 test:
@@ -52,7 +53,9 @@ plugin: rootfs
 plugin-push: rootfs
 	docker plugin rm --force $(PLUGIN_FULL_NAME) || true
 	docker plugin create $(PLUGIN_FULL_NAME) ./plugin
+	docker plugin create $(PLUGIN_FULL_NAME):$(VERSION) ./plugin
 	docker plugin push $(PLUGIN_FULL_NAME)
+	docker plugin push $(PLUGIN_FULL_NAME):$(VERSION)
 
 
 plugin-logs:

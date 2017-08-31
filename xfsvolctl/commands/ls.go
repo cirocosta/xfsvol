@@ -11,7 +11,7 @@ import (
 )
 
 var Ls = cli.Command{
-	Name:  "ls",
+	Name:  "list, ls",
 	Usage: "Lists the volumes managed by 'xfsvol' plugin",
 	Description: `Lists the volumes created with XFS pquotas.
     Retrieve a list of the volumes created by 'xfsvol' Docker
