@@ -1,12 +1,12 @@
 package commands
 
 import (
-  "fmt"
-  "os"
-  "text/tabwriter"
+	"fmt"
+	"os"
+	"text/tabwriter"
 
-  "github.com/pkg/errors"
-  "github.com/cirocosta/xfsvol/manager"
+	"github.com/pkg/errors"
+	"github.com/cirocosta/xfsvol/manager"
 	"gopkg.in/urfave/cli.v1"
 )
 

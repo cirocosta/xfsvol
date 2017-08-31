@@ -1,11 +1,11 @@
 package commands
 
 import (
-  "github.com/pkg/errors"
-  "github.com/cirocosta/xfsvol/manager"
+	"github.com/pkg/errors"
+	"github.com/cirocosta/xfsvol/manager"
 	"gopkg.in/urfave/cli.v1"
 
-  log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var Create = cli.Command{
@@ -50,9 +50,11 @@ var Create = cli.Command{
 		},
 	},
 	Action: func (c *cli.Context) (err error) {
-		var name = c.String("name")
-		var size = c.String("size")
-		var root = c.String("root")
+		var (
+			name = c.String("name")
+			size = c.String("size")
+			root = c.String("root")
+		)
 
 		if name == "" || size == "" || root == "" {
 			cli.ShowCommandHelp(c, "create")
@@ -65,7 +67,7 @@ var Create = cli.Command{
 		})
 		if err != nil {
 			err = errors.Wrapf(err,
-			"Couldn't initiate manager")
+				"Couldn't initiate manager")
 			return
 		}
 
