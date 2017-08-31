@@ -30,7 +30,7 @@ create_testing_directory() {
 
 create_xfs_loopback_device() {
 	echo "INFO:
-  Creating XFS loopback device 
+  Creating XFS loopback device
   "
 
 	sudo dd if=/dev/zero of=/xfs.1G bs=1M count=1024

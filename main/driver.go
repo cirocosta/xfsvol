@@ -14,7 +14,7 @@ import (
 
 const (
 	HostMountPoint = "/mnt/xfs/volumes"
-	DefaultSize    = "1GiB"
+	DefaultSize    = "512M"
 )
 
 type nfsVolDriver struct {
