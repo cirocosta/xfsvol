@@ -172,11 +172,6 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 		return
 	}
 
-	if vol.INode == 0 {
-		err = ErrEmptyINode
-		return
-	}
-
 	if !isValidName(vol.Name) {
 		err = ErrInvalidName
 		return

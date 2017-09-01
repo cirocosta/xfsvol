@@ -64,7 +64,7 @@ var Create = cli.Command{
 		)
 
 
-		if name == "" || size == "" || root == "" || inode == 0 {
+		if name == "" || size == "" || root == "" {
 			cli.ShowCommandHelp(c, "create")
 			err = errors.Errorf("All parameters must be set.")
 			return
