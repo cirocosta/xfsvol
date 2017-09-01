@@ -96,7 +96,7 @@ func TestControl_succeedsToAssignQuotaToDirectoryWithinTree(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestControl_flatlyEnforcesQuota(t *testing.T) {
+func TestControl_flatlyEnforcesDiskQuota(t *testing.T) {
 	dir, err := ioutil.TempDir(xfsMount, "")
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
@@ -125,4 +125,31 @@ func TestControl_flatlyEnforcesQuota(t *testing.T) {
 
 	assert.Error(t, WriteBytes(fileDir1M, 'c', 2*(1<<20)))
 	assert.NoError(t, WriteBytes(fileDir2M, 'c', 1*(1<<20)))
+}
+
+func TestControl_enforcesINodeQuota(t *testing.T) {
+	dir, err := ioutil.TempDir(xfsMount, "")
+	assert.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	dirA := path.Join(dir, "A")
+	dirB := path.Join(dir, "B")
+
+	assert.NoError(t, os.MkdirAll(dirA, 0755))
+	assert.NoError(t, os.MkdirAll(dirB, 0755))
+
+	ctl, err := NewControl(dir)
+	assert.NoError(t, err)
+
+	assert.NoError(t, ctl.SetQuota(dirA, Quota{
+		Size:  (1 << 20),
+		INode: 30,
+	}))
+	assert.NoError(t, ctl.SetQuota(dirB, Quota{
+		Size:  (1 << 20),
+		INode: 300,
+	}))
+
+	assert.Error(t, CreateFiles(dirA, 100))
+	assert.NoError(t, CreateFiles(dirB, 100))
 }
