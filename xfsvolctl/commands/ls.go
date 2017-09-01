@@ -11,7 +11,7 @@ import (
 )
 
 var Ls = cli.Command{
-	Name:  "list, ls",
+	Name:  "ls",
 	Usage: "Lists the volumes managed by 'xfsvol' plugin",
 	Description: `Lists the volumes created with XFS pquotas.
     Retrieve a list of the volumes created by 'xfsvol' Docker
@@ -64,12 +64,13 @@ var Ls = cli.Command{
 
 		w := new(tabwriter.Writer)
 		w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-		fmt.Fprintln(w, "NAME\tQUOTA")
+		fmt.Fprintln(w, "NAME\tBLK-QUOTA\tINODE-QUOTA\t")
 
 		for _, vol := range vols {
-			fmt.Fprintf(w, "%s\t%s\n",
+			fmt.Fprintf(w, "%s\t%s\t%d\n",
 				vol.Name,
-				manager.HumanSize(vol.Size))
+				manager.HumanSize(vol.Size),
+				vol.INode)
 		}
 		w.Flush()
 		return

@@ -6,12 +6,7 @@ PLUGIN_FULL_NAME	:=	cirocosta/xfsvol
 PLUGIN_ID			:=	$(shell docker plugin inspect $(PLUGIN_NAME) --format '{{ .ID }}')
 
 
-all: build
-
-
-build:
-	cd ./xfsvolctl && go build -ldflags "-X main.version=$(VERSION)" -v
-
+all: install
 
 install:
 	cd ./xfsvolctl && go install -ldflags "-X main.version=$(VERSION)" -v
