@@ -130,7 +130,7 @@ func TestControl_flatlyEnforcesDiskQuota(t *testing.T) {
 func TestControl_enforcesINodeQuota(t *testing.T) {
 	dir, err := ioutil.TempDir(xfsMount, "")
 	assert.NoError(t, err)
-	// defer os.RemoveAll(dir)
+	defer os.RemoveAll(dir)
 
 	dirA := path.Join(dir, "A")
 	dirB := path.Join(dir, "B")
