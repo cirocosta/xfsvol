@@ -120,5 +120,12 @@ ioctl(3, FS_IOC_FSSETXATTR, 0xc4201a95e4) = 0
 
 quotactl(Q_XSETQLIM|PRJQUOTA, "/mnt/xfs/tmp/bbb/backingFsBlockDev", 2, {version=1, flags=XFS_PROJ_QUOTA, fieldmask=0xc, id=2, blk_hardlimit=2, blk_softlimit=2, ino_hardlimit=1024, ino_softlimit=1024, bcount=0, icount=0, ...}) = 0
 [pid  6833] ioctl(2, TCGETS, {B38400 opost isig icanon echo ...}) = 0
+
+
+// retrieving (ls)
+
+[pid  8609] quotactl(Q_XGETQUOTA|PRJQUOTA, "/mnt/xfs/tmp/ddd/backingFsBlockDev", 2, {version=1, flags=XFS_PROJ_QUOTA, fieldmask=0, id=2, blk_hardlimit=8, blk_softlimit=8, ino_hardlimit=0, ino_softlimit=0, bcount=8, icount=104, ...}) = 0
+
+
 ```
 

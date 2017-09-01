@@ -196,7 +196,7 @@ func setProjectQuota(backingFsBlockDev string, projectID uint32, quota Quota) (e
 	d.d_id = C.__u32(projectID)
 	d.d_flags = C.XFS_PROJ_QUOTA
 
-	d.d_fieldmask = C.FS_DQ_BHARD | C.FS_DQ_BSOFT
+	d.d_fieldmask = C.FS_DQ_BHARD | C.FS_DQ_BSOFT | C.FS_DQ_ISOFT | C.FS_DQ_IHARD
 	d.d_blk_hardlimit = C.__u64(quota.Size / 512)
 	d.d_blk_softlimit = d.d_blk_hardlimit
 
