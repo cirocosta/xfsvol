@@ -34,9 +34,10 @@ type Config struct {
 // root path that has a project quota associated
 // with it.
 type Volume struct {
-	Name string
-	Path string
-	Size uint64
+	Name  string
+	Path  string
+	Size  uint64
+	INode uint64
 }
 
 var (
@@ -44,6 +45,7 @@ var (
 
 	ErrInvalidName = errors.Errorf("Invalid name")
 	ErrEmptyQuota  = errors.Errorf("Invalid quota - Can't be 0")
+	ErrEmptyINode  = errors.Errorf("Invalid inode - Can't be 0")
 	ErrNotFound    = errors.Errorf("Volume not found")
 )
 
@@ -106,9 +108,10 @@ func (m Manager) List() (vols []Volume, err error) {
 			}
 
 			vols = append(vols, Volume{
-				Name: file.Name(),
-				Size: quota.Size,
-				Path: absPath,
+				Name:  file.Name(),
+				Size:  quota.Size,
+				INode: quota.INode,
+				Path:  absPath,
 			})
 		}
 	}
@@ -147,6 +150,7 @@ func (m Manager) Get(name string) (vol Volume, found bool, err error) {
 
 			vol.Name = filepath.Base(absPath)
 			vol.Size = quota.Size
+			vol.INode = quota.INode
 			vol.Path = absPath
 			return
 		}
@@ -158,10 +162,18 @@ func (m Manager) Get(name string) (vol Volume, found bool, err error) {
 func (m Manager) Create(vol Volume) (absPath string, err error) {
 	var log = m.logger.
 		WithField("name", vol.Name).
-		WithField("size", vol.Size)
+		WithField("size", vol.Size).
+		WithField("inode", vol.INode)
+
+	log.Debug("starting volume creation")
 
 	if vol.Size == 0 {
 		err = ErrEmptyQuota
+		return
+	}
+
+	if vol.INode == 0 {
+		err = ErrEmptyINode
 		return
 	}
 
@@ -170,7 +182,6 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 		return
 	}
 
-	log.Debug("creating volume")
 	absPath = filepath.Join(m.root, vol.Name)
 	err = os.MkdirAll(absPath, 0755)
 	if err != nil {
@@ -181,12 +192,13 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 	}
 
 	err = m.quotaCtl.SetQuota(absPath, lib.Quota{
-		Size: vol.Size,
+		Size:  vol.Size,
+		INode: vol.INode,
 	})
 	if err != nil {
 		err = errors.Wrapf(err,
-			"Couldn't set quota for volume name=%s size=%d",
-			vol.Name, vol.Size)
+			"Couldn't set quota for volume name=%s size=%d inode=%d",
+			vol.Name, vol.Size, vol.INode)
 		log.WithError(err).Error("volume creation failed")
 		os.RemoveAll(absPath)
 		return

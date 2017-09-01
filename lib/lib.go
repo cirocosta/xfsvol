@@ -63,9 +63,14 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Quota limit params - currently we only control blocks hard limit
+// Quota limit params
+// -	Size:	number of blk sizes that can be
+//		commited
+// -	INode:	maximum number of INodes that
+//		can be created
 type Quota struct {
-	Size uint64
+	Size  uint64
+	INode uint64
 }
 
 // Control - Context to be used by storage driver (e.g. overlay)

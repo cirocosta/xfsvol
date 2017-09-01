@@ -44,6 +44,10 @@ var Create = cli.Command{
 			Name: "size, s",
 			Usage: "Size of the XFS project quota to apply",
 		},
+		cli.Uint64Flag{
+			Name: "inode, i",
+			Usage: "Maximum number of INodes that can be created",
+		},
 		cli.StringFlag{
 			Name: "root, r",
 			Usage: "Root of the volume creation",
@@ -54,9 +58,13 @@ var Create = cli.Command{
 			name = c.String("name")
 			size = c.String("size")
 			root = c.String("root")
+			inode = c.Uint64("inode")
+
+			sizeInBytes uint64
 		)
 
-		if name == "" || size == "" || root == "" {
+
+		if name == "" || size == "" || root == "" || inode == 0 {
 			cli.ShowCommandHelp(c, "create")
 			err = errors.Errorf("All parameters must be set.")
 			return
@@ -71,7 +79,7 @@ var Create = cli.Command{
 			return
 		}
 
-		sizeInBytes, err := manager.FromHumanSize(size)
+		sizeInBytes, err = manager.FromHumanSize(size)
 		if err != nil {
 			err = errors.Wrapf(err,
 				"Size supplied by user can't be converted to uint64 bytes")
@@ -81,16 +89,20 @@ var Create = cli.Command{
 		location, err := mgr.Create(manager.Volume{
 			Name: name,
 			Size: sizeInBytes,
+			INode: inode,
 		})
 		if err != nil {
 			err = errors.Wrapf(err,
-				"Couldn't create volume name=%s bytes=%d",
-			name, sizeInBytes)
-		return
+				"Couldn't create volume name=%s bytes=%d inode=%d",
+			name, sizeInBytes, inode)
+			return
 		}
 
 		log.
 			WithField("location", location).
+			WithField("name", name).
+			WithField("size", size).
+			WithField("inode", inode).
 			Info("volume created")
 		return
 	},
