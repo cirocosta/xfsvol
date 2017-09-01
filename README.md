@@ -96,3 +96,29 @@ GLOBAL OPTIONS:
    --version, -v  print the version
 ```
 
+### Under the hood
+
+
+```
+$ sudo mkdir -p /mnt/xfs/tmp/bbb
+$ sudo strace -f xfsvolctl create \
+        --root /mnt/xfs/tmp/bbb \
+        --name ccc \
+        --size 1024 \
+        --inode 1024
+
+stat("/mnt/xfs/tmp/bbb", {st_mode=S_IFDIR|0755, st_size=6, ...}) = 0
+unlinkat(AT_FDCWD, "/mnt/xfs/tmp/bbb/backingFsBlockDev", 0) = -1 ENOENT (No such file or directory)
+mknodat(AT_FDCWD, "/mnt/xfs/tmp/bbb/backingFsBlockDev", S_IFBLK|0600, makedev(7, 0)) = 0
+quotactl(Q_XSETQLIM|PRJQUOTA, "/mnt/xfs/tmp/bbb/backingFsBlockDev", 1, {version=1, flags=XFS_PROJ_QUOTA, fieldmask=0xc, id=1, blk_hardlimit=0, blk_softlimit=0, ino_hardlimit=0, ino_softlimit=0, bcount=0, icount=0, ...}) = 0
+...
+mkdirat(AT_FDCWD, "/mnt/xfs/tmp/bbb/ccc", 0755) = 0
+open("/mnt/xfs/tmp/bbb/ccc", O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=6, ...}) = 0
+ioctl(3, FS_IOC_FSGETXATTR, 0xc4201a95e4) = 0
+ioctl(3, FS_IOC_FSSETXATTR, 0xc4201a95e4) = 0
+
+quotactl(Q_XSETQLIM|PRJQUOTA, "/mnt/xfs/tmp/bbb/backingFsBlockDev", 2, {version=1, flags=XFS_PROJ_QUOTA, fieldmask=0xc, id=2, blk_hardlimit=2, blk_softlimit=2, ino_hardlimit=1024, ino_softlimit=1024, bcount=0, icount=0, ...}) = 0
+[pid  6833] ioctl(2, TCGETS, {B38400 opost isig icanon echo ...}) = 0
+```
+
