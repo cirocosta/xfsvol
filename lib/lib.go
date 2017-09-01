@@ -59,6 +59,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )
@@ -152,8 +153,7 @@ func NewControl(basePath string) (*Control, error) {
 
 // SetQuota - assign a unique project id to directory and set the quota limits
 // for that project id
-func (q *Control) SetQuota(targetPath string, quota Quota) error {
-
+func (q *Control) SetQuota(targetPath string, quota Quota) (err error) {
 	projectID, ok := q.quotas[targetPath]
 	if !ok {
 		projectID = q.nextProjectID
@@ -161,25 +161,37 @@ func (q *Control) SetQuota(targetPath string, quota Quota) error {
 		//
 		// assign project id to new container directory
 		//
-		err := setProjectID(targetPath, projectID)
+		err = setProjectID(targetPath, projectID)
 		if err != nil {
-			return err
+			err = errors.Wrapf(err, "couldn't set project id")
+			return
 		}
 
 		q.quotas[targetPath] = projectID
 		q.nextProjectID++
 	}
 
-	//
 	// set the quota limit for the container's project id
-	//
-	logrus.Debugf("SetQuota(%s, %d): projectID=%d", targetPath, quota.Size, projectID)
-	return setProjectQuota(q.backingFsBlockDev, projectID, quota)
+
+	logrus.
+		WithField("project-id", projectID).
+		WithField("target-path", targetPath).
+		WithField("size", quota.Size).
+		WithField("inode", quota.INode).
+		Debugf("setting quota")
+
+	err = setProjectQuota(q.backingFsBlockDev, projectID, quota)
+	if err != nil {
+		err = errors.Wrapf(err, "Couldn't set project quota")
+	}
+
+	return
 }
 
 // setProjectQuota - set the quota for project id on xfs block device
-func setProjectQuota(backingFsBlockDev string, projectID uint32, quota Quota) error {
+func setProjectQuota(backingFsBlockDev string, projectID uint32, quota Quota) (err error) {
 	var d C.fs_disk_quota_t
+
 	d.d_version = C.FS_DQUOT_VERSION
 	d.d_id = C.__u32(projectID)
 	d.d_flags = C.XFS_PROJ_QUOTA
@@ -188,6 +200,9 @@ func setProjectQuota(backingFsBlockDev string, projectID uint32, quota Quota) er
 	d.d_blk_hardlimit = C.__u64(quota.Size / 512)
 	d.d_blk_softlimit = d.d_blk_hardlimit
 
+	d.d_ino_hardlimit = C.__u64(quota.INode)
+	d.d_ino_softlimit = d.d_ino_hardlimit
+
 	var cs = C.CString(backingFsBlockDev)
 	defer C.free(unsafe.Pointer(cs))
 
@@ -195,18 +210,21 @@ func setProjectQuota(backingFsBlockDev string, projectID uint32, quota Quota) er
 		uintptr(unsafe.Pointer(cs)), uintptr(d.d_id),
 		uintptr(unsafe.Pointer(&d)), 0, 0)
 	if errno != 0 {
-		return fmt.Errorf("Failed to set quota limit for projid %d on %s: %v",
+		err = errors.Errorf(
+			"Failed to set quota limit for projid %d on %s: %v",
 			projectID, backingFsBlockDev, errno.Error())
+		return
 	}
 
-	return nil
+	return
 }
 
 // GetQuota - get the quota limits of a directory that was configured with SetQuota
-func (q *Control) GetQuota(targetPath string, quota *Quota) error {
+func (q *Control) GetQuota(targetPath string, quota *Quota) (err error) {
 	projectID, ok := q.quotas[targetPath]
 	if !ok {
-		return fmt.Errorf("quota not found for path : %s", targetPath)
+		err = errors.Errorf("quota not found for path : %s", targetPath)
+		return
 	}
 
 	//
@@ -221,12 +239,15 @@ func (q *Control) GetQuota(targetPath string, quota *Quota) error {
 		uintptr(unsafe.Pointer(cs)), uintptr(C.__u32(projectID)),
 		uintptr(unsafe.Pointer(&d)), 0, 0)
 	if errno != 0 {
-		return fmt.Errorf("Failed to get quota limit for projid %d on %s: %v",
+		err = errors.Errorf(
+			"Failed to get quota limit for projid %d on %s: %v",
 			projectID, q.backingFsBlockDev, errno.Error())
+		return
 	}
-	quota.Size = uint64(d.d_blk_hardlimit) * 512
 
-	return nil
+	quota.Size = uint64(d.d_blk_hardlimit) * 512
+	quota.INode = uint64(d.d_ino_hardlimit)
+	return
 }
 
 // getProjectID - get the project id of path on xfs
