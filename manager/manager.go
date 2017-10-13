@@ -40,7 +40,7 @@ type Volume struct {
 }
 
 var (
-	NameRegex = regexp.MustCompile(`^[a-zA-Z][\w\-]{1,30}$`)
+	NameRegex = regexp.MustCompile(`^[a-zA-Z0-9][\w\-]{1,250}$`)
 
 	ErrInvalidName = errors.Errorf("Invalid name")
 	ErrEmptyQuota  = errors.Errorf("Invalid quota - Can't be 0")
