@@ -10,7 +10,7 @@
 //       for both xfs/ext4 for kernel version >= v4.5
 //
 
-package lib
+package xfs
 
 /*
 #include <stdlib.h>

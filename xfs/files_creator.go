@@ -1,4 +1,4 @@
-package lib
+package xfs
 
 import (
 	"fmt"

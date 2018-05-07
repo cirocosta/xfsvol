@@ -5,8 +5,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/pkg/errors"
 	"github.com/cirocosta/xfsvol/manager"
+	"github.com/pkg/errors"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -33,11 +33,11 @@ var Ls = cli.Command{
 	`,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name: "root, r",
+			Name:  "root, r",
 			Usage: "Root of the volume listing",
 		},
 	},
-	Action: func (c *cli.Context) (err error) {
+	Action: func(c *cli.Context) (err error) {
 		var root = c.String("root")
 		if root == "" {
 			cli.ShowCommandHelp(c, "ls")

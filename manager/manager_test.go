@@ -7,8 +7,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/cirocosta/xfsvol/lib"
 	"github.com/cirocosta/xfsvol/manager"
+	"github.com/cirocosta/xfsvol/xfs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -127,7 +127,7 @@ func TestCreate_actuallyHasQuotaEnforced(t *testing.T) {
 	defer fd.Close()
 
 	fmt.Println(filePath)
-	assert.Error(t, lib.WriteBytes(fd, 'c', 20*(1<<20)))
+	assert.Error(t, xfs.WriteBytes(fd, 'c', 20*(1<<20)))
 }
 
 func TestList_canList0Directorise(t *testing.T) {

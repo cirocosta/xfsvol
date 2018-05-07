@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/pkg/errors"
 	"github.com/cirocosta/xfsvol/manager"
+	"github.com/pkg/errors"
 	"gopkg.in/urfave/cli.v1"
 
 	log "github.com/sirupsen/logrus"
@@ -37,32 +37,31 @@ var Create = cli.Command{
     `,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name: "name, n",
+			Name:  "name, n",
 			Usage: "Name of the volume to create",
 		},
 		cli.StringFlag{
-			Name: "size, s",
+			Name:  "size, s",
 			Usage: "Size of the XFS project quota to apply",
 		},
 		cli.Uint64Flag{
-			Name: "inode, i",
+			Name:  "inode, i",
 			Usage: "Maximum number of INodes that can be created",
 		},
 		cli.StringFlag{
-			Name: "root, r",
+			Name:  "root, r",
 			Usage: "Root of the volume creation",
 		},
 	},
-	Action: func (c *cli.Context) (err error) {
+	Action: func(c *cli.Context) (err error) {
 		var (
-			name = c.String("name")
-			size = c.String("size")
-			root = c.String("root")
+			name  = c.String("name")
+			size  = c.String("size")
+			root  = c.String("root")
 			inode = c.Uint64("inode")
 
 			sizeInBytes uint64
 		)
-
 
 		if name == "" || size == "" || root == "" {
 			cli.ShowCommandHelp(c, "create")
@@ -87,14 +86,14 @@ var Create = cli.Command{
 		}
 
 		location, err := mgr.Create(manager.Volume{
-			Name: name,
-			Size: sizeInBytes,
+			Name:  name,
+			Size:  sizeInBytes,
 			INode: inode,
 		})
 		if err != nil {
 			err = errors.Wrapf(err,
 				"Couldn't create volume name=%s bytes=%d inode=%d",
-			name, sizeInBytes, inode)
+				name, sizeInBytes, inode)
 			return
 		}
 

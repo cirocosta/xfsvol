@@ -3,7 +3,6 @@ ROOTFS_IMAGE		:=	cirocosta/xfsvol-rootfs
 ROOTFS_CONTAINER	:=	rootfs
 PLUGIN_NAME			:=	xfsvol
 PLUGIN_FULL_NAME	:=	cirocosta/xfsvol
-PLUGIN_ID			:=	$(shell docker plugin inspect $(PLUGIN_NAME) --format '{{ .ID }}')
 
 
 all: install

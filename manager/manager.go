@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/cirocosta/xfsvol/lib"
+	"github.com/cirocosta/xfsvol/xfs"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 
@@ -18,7 +18,7 @@ import (
 // responsability of 'CRUD'ing these volumes.
 type Manager struct {
 	logger   *log.Entry
-	quotaCtl *lib.Control
+	quotaCtl *xfs.Control
 	root     string
 }
 
@@ -72,7 +72,7 @@ func New(cfg Config) (manager Manager, err error) {
 		return
 	}
 
-	quotaCtl, err := lib.NewControl(cfg.Root)
+	quotaCtl, err := xfs.NewControl(cfg.Root)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't initialize XFS quota control on root path %s",
@@ -96,7 +96,7 @@ func (m Manager) List() (vols []Volume, err error) {
 
 	for _, file := range files {
 		if file.IsDir() {
-			quota := lib.Quota{}
+			quota := xfs.Quota{}
 			absPath := filepath.Join(m.root, file.Name())
 
 			err = m.quotaCtl.GetQuota(absPath, &quota)
@@ -137,7 +137,7 @@ func (m Manager) Get(name string) (vol Volume, found bool, err error) {
 	for _, file := range files {
 		if file.IsDir() && file.Name() == name {
 			found = true
-			quota := lib.Quota{}
+			quota := xfs.Quota{}
 			absPath = filepath.Join(m.root, name)
 
 			err = m.quotaCtl.GetQuota(absPath, &quota)
@@ -186,7 +186,7 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 		return
 	}
 
-	err = m.quotaCtl.SetQuota(absPath, lib.Quota{
+	err = m.quotaCtl.SetQuota(absPath, xfs.Quota{
 		Size:  vol.Size,
 		INode: vol.INode,
 	})
