@@ -13,6 +13,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	NameRegex = regexp.MustCompile(`^[a-zA-Z0-9][\w\-]{1,250}$`)
+
+	ErrInvalidName = errors.Errorf("Invalid name")
+	ErrEmptyQuota  = errors.Errorf("Invalid quota - Can't be 0")
+	ErrEmptyINode  = errors.Errorf("Invalid inode - Can't be 0")
+	ErrNotFound    = errors.Errorf("Volume not found")
+)
+
 // Manager is the entity responsible for managing
 // volumes under a given base path. It takes the
 // responsability of 'CRUD'ing these volumes.
@@ -40,15 +49,6 @@ type Volume struct {
 	INode uint64
 }
 
-var (
-	NameRegex = regexp.MustCompile(`^[a-zA-Z0-9][\w\-]{1,250}$`)
-
-	ErrInvalidName = errors.Errorf("Invalid name")
-	ErrEmptyQuota  = errors.Errorf("Invalid quota - Can't be 0")
-	ErrEmptyINode  = errors.Errorf("Invalid inode - Can't be 0")
-	ErrNotFound    = errors.Errorf("Volume not found")
-)
-
 func New(cfg Config) (manager Manager, err error) {
 	if cfg.Root == "" {
 		err = errors.Errorf("Root not specified.")
@@ -72,7 +72,9 @@ func New(cfg Config) (manager Manager, err error) {
 		return
 	}
 
-	quotaCtl, err := xfs.NewControl(cfg.Root)
+	quotaCtl, err := xfs.NewControl(xfs.ControlConfig{
+		BasePath: cfg.Root,
+	})
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't initialize XFS quota control on root path %s",
@@ -81,7 +83,7 @@ func New(cfg Config) (manager Manager, err error) {
 	}
 
 	manager.logger.Debug("manager initialized")
-	manager.quotaCtl = quotaCtl
+	manager.quotaCtl = &quotaCtl
 	manager.root = cfg.Root
 	return
 }

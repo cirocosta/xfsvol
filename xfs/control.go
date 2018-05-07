@@ -74,17 +74,25 @@ type Quota struct {
 	INode uint64
 }
 
-// Control - Context to be used by storage driver (e.g. overlay)
-// who wants to apply project quotas to container dirs
+// Control gives the context to be used by storage driver
+// who wants to apply project quotas to container dirs.
 type Control struct {
 	backingFsBlockDev string
 	nextProjectID     uint32
 	quotas            map[string]uint32
 }
 
-// NewControl - initialize project quota support.
-// Test to make sure that quota can be set on a test dir and find
-// the first project id to be used for the next container create.
+// ControlConfig specifies the configuration to be used by
+// the controller that will hold the quota allocation state.
+type ControlConfig struct {
+	StartingProjectId *uint32
+	BasePath          string
+}
+
+// NewControl initializes project quota support.
+//
+// It first tests to make sure that quota can be set on a test dir
+// and find the first project id to be used for the next container creation.
 //
 // Returns nil (and error) if project quota is not supported.
 //
@@ -92,6 +100,7 @@ type Control struct {
 // This test will fail if the backing fs is not xfs.
 //
 // xfs_quota tool can be used to assign a project id to the driver home directory, e.g.:
+//
 //    echo 999:/var/lib/docker/overlay2 >> /etc/projects
 //    echo docker:999 >> /etc/projid
 //    xfs_quota -x -c 'project -s docker' /<xfs mount point>
@@ -104,51 +113,72 @@ type Control struct {
 // on it. If that works, continue to scan existing containers to map allocated
 // project ids.
 //
-func NewControl(basePath string) (*Control, error) {
-	//
-	// Get project id of parent dir as minimal id to be used by driver
-	//
-	minProjectID, err := getProjectID(basePath)
-	if err != nil {
-		return nil, err
+func NewControl(cfg ControlConfig) (c Control, err error) {
+	var minProjectID uint32
+
+	if cfg.BasePath == "" {
+		err = errors.Errorf("BasePath must be provided")
+		return
 	}
-	minProjectID++
+
+	if cfg.StartingProjectId == nil {
+		minProjectID, err = getProjectID(cfg.BasePath)
+		if err != nil {
+			err = errors.Wrapf(err,
+				"failed to retrieve projectid from basepath %s",
+				cfg.BasePath)
+			return
+		}
+
+		minProjectID++
+	} else {
+		minProjectID = *cfg.StartingProjectId
+	}
 
 	//
 	// create backing filesystem device node
 	//
-	backingFsBlockDev, err := makeBackingFsDev(basePath)
+	c.backingFsBlockDev, err = makeBackingFsDev(cfg.BasePath)
 	if err != nil {
-		return nil, err
+		err = errors.Wrapf(err,
+			"failed to create backingfs dev for base path %s",
+			cfg.BasePath)
+		return
 	}
 
 	//
 	// Test if filesystem supports project quotas by trying to set
 	// a quota on the first available project id
 	//
-	quota := Quota{
+	err = setProjectQuota(c.backingFsBlockDev, minProjectID, Quota{
 		Size: 0,
-	}
-	if err := setProjectQuota(backingFsBlockDev, minProjectID, quota); err != nil {
-		return nil, err
+	})
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to set quota on the first available"+
+				" proj id after base path %s",
+			cfg.BasePath)
+		return
 	}
 
-	q := Control{
-		backingFsBlockDev: backingFsBlockDev,
-		nextProjectID:     minProjectID + 1,
-		quotas:            make(map[string]uint32),
-	}
+	c.nextProjectID = minProjectID + 1
+	c.quotas = make(map[string]uint32)
 
 	//
 	// get first project id to be used for next container
 	//
-	err = q.findNextProjectID(basePath)
+	err = c.findNextProjectID(cfg.BasePath)
 	if err != nil {
-		return nil, err
+		err = errors.Wrapf(err,
+			"failed to find next projectId from basepath %s", cfg.BasePath)
+		return
 	}
 
-	logrus.Debugf("NewControl(%s): nextProjectID = %d", basePath, q.nextProjectID)
-	return &q, nil
+	logrus.Infof("NewControl(%s): nextProjectID = %d",
+		cfg.BasePath,
+		c.nextProjectID)
+
+	return
 }
 
 // SetQuota - assign a unique project id to directory and set the quota limits
@@ -178,7 +208,7 @@ func (q *Control) SetQuota(targetPath string, quota Quota) (err error) {
 		WithField("target-path", targetPath).
 		WithField("size", quota.Size).
 		WithField("inode", quota.INode).
-		Debugf("setting quota")
+		Infof("setting quota")
 
 	err = setProjectQuota(q.backingFsBlockDev, projectID, quota)
 	if err != nil {
