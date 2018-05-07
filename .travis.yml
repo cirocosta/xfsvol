@@ -9,6 +9,5 @@ install:
   - './.travis/setup.sh'
 
 script:
-  - 'cd ./manager && sudo /home/travis/.gimme/versions/go/bin/go test -v'
-  - 'cd ../lib && sudo /home/travis/.gimme/versions/go/bin/go test -v'
+  - 'sudo /home/travis/.gimme/versions/go/bin/go test ./... -v'
 

@@ -4,6 +4,8 @@
 
 <br/>
 
+[![Build Status](https://travis-ci.org/cirocosta/xfsvol.svg?branch=master)](https://travis-ci.org/cirocosta/xfsvol)
+
 ## Quickstart
 
 1. Create a mountpoint at `/mnt/xfs` and a directory `/mnt/xfs/volumes`. 

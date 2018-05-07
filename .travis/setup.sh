@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Prepares the travis-ci machine to have the
+# necessary components for properly testing
+# the core xfsvol library.
+#
+# It makes sures that we have:
+# - xfs utilities installed
+# - testing directories set up
+# - a xfs filesystem mounted in a loopback
+#   device.
+
 set -o errexit
 
 main() {
@@ -9,23 +19,16 @@ main() {
 }
 
 install_dependencies() {
+  echo "INFO:
+  Installing base dependencies using 'apt'.
+  "
+
 	sudo apt update -y
 	sudo apt install -y xfsprogs tree
-}
-
-create_testing_directory() {
-	echo "INFO:
-  Creating testing directory /mnt/xfs/tmp
-  "
-
-	sudo mkdir -p /mnt/xfs/tmp
-	sudo chown -R $(whoami) /mnt/xfs/tmp
 
 	echo "SUCCESS:
-  Testing directory created
+  Dependencies installed.
   "
-
-	tree /mnt
 }
 
 create_xfs_loopback_device() {
@@ -44,6 +47,21 @@ create_xfs_loopback_device() {
   "
 
 	lsblk
+}
+
+create_testing_directory() {
+	echo "INFO:
+  Creating testing directory '/mnt/xfs/tmp'.
+  "
+
+	sudo mkdir -p /mnt/xfs/tmp
+	sudo chown -R $(whoami) /mnt/xfs/tmp
+
+	echo "SUCCESS:
+  Testing directory created
+  "
+
+	tree /mnt
 }
 
 main
