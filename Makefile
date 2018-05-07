@@ -8,21 +8,24 @@ PLUGIN_ID			:=	$(shell docker plugin inspect $(PLUGIN_NAME) --format '{{ .ID }}'
 
 all: install
 
+
 install:
-	cd ./xfsvolctl && go install -ldflags "-X main.version=$(VERSION)" -v
-	cd ./main && go install -ldflags "-X main.version=$(VERSION)" -v
+	cd ./xfsvolctl && \
+		go install \
+			-ldflags "-X main.version=$(VERSION)" \
+			-v
+	cd ./main && \
+		go install \
+			-ldflags "-X main.version=$(VERSION)" \
+			-v
 
 
 test:
-	cd ./manager && go test -v
-	cd ./lib && go test -v
+	go test ./... -v
 
 
 fmt:
-	cd ./manager && go fmt
-	cd ./lib && go fmt
-	cd ./main && go fmt
-	cd ./xfsvolctl && go fmt
+	go fmt ./...
 
 
 rootfs-image:
@@ -51,26 +54,6 @@ plugin-push: rootfs
 	docker plugin create $(PLUGIN_FULL_NAME):$(VERSION) ./plugin
 	docker plugin push $(PLUGIN_FULL_NAME)
 	docker plugin push $(PLUGIN_FULL_NAME):$(VERSION)
-
-
-plugin-logs:
-	docker run \
-		--rm \
-		-it \
-		--privileged \
-		--pid=host \
-		justincormack/nsenter1 \
-		/bin/sh -c 'docker-runc exec $(PLUGIN_ID) tail -n 100 -f /var/log/xfsvol/plugin.log'
-
-
-plugin-exec:
-	docker run \
-		--rm \
-		-it \
-		--privileged \
-		--pid=host \
-		justincormack/nsenter1 \
-		/bin/sh -c 'docker-runc exec -t $(PLUGIN_ID) sh'
 
 
 .PHONY: install deps fmt rootfs-image rootfs plugin plugin-logs plugin-exec test
