@@ -16,7 +16,7 @@ type TestDriver struct {
 }
 
 func (t *TestDriver) GetCapabilities() (*CapabilitiesResponse, error) {
-	return &CapabilitiesResponse{Scope: LocalScope}, nil
+	return &CapabilitiesResponse{Scope: LocalScope, ConnectivityScope: GlobalScope}, nil
 }
 
 func (t *TestDriver) CreateNetwork(r *CreateNetworkRequest) error {
@@ -98,11 +98,11 @@ func (e *ErrDriver) Leave(r *LeaveRequest) error {
 func TestMain(m *testing.M) {
 	d := &TestDriver{}
 	h1 := NewHandler(d)
-	go h1.ServeTCP("test", ":32234", nil)
+	go h1.ServeTCP("test", ":32234", "", nil)
 
 	e := &ErrDriver{}
 	h2 := NewHandler(e)
-	go h2.ServeTCP("err", ":32567", nil)
+	go h2.ServeTCP("err", ":32567", "", nil)
 
 	m.Run()
 }
@@ -128,7 +128,7 @@ func TestCapabilitiesExchange(t *testing.T) {
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 
-	expected := `{"Scope":"local"}`
+	expected := `{"Scope":"local","ConnectivityScope":"global"}`
 	if string(body) != expected+"\n" {
 		t.Fatalf("Expected %s, got %s\n", expected+"\n", string(body))
 	}

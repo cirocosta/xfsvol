@@ -9,8 +9,6 @@ import (
 	"github.com/cirocosta/xfsvol/xfs"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -26,7 +24,6 @@ var (
 // volumes under a given base path. It takes the
 // responsability of 'CRUD'ing these volumes.
 type Manager struct {
-	logger   *log.Entry
 	quotaCtl *xfs.Control
 	root     string
 }
@@ -55,8 +52,6 @@ func New(cfg Config) (manager Manager, err error) {
 		return
 	}
 
-	manager.logger = log.WithField("root", cfg.Root)
-
 	if !filepath.IsAbs(cfg.Root) {
 		err = errors.Errorf(
 			"Root (%s) must be an absolute path",
@@ -82,9 +77,9 @@ func New(cfg Config) (manager Manager, err error) {
 		return
 	}
 
-	manager.logger.Debug("manager initialized")
 	manager.quotaCtl = &quotaCtl
 	manager.root = cfg.Root
+
 	return
 }
 
@@ -162,13 +157,6 @@ func (m Manager) Get(name string) (vol Volume, found bool, err error) {
 }
 
 func (m Manager) Create(vol Volume) (absPath string, err error) {
-	var log = m.logger.
-		WithField("name", vol.Name).
-		WithField("size", vol.Size).
-		WithField("inode", vol.INode)
-
-	log.Debug("starting volume creation")
-
 	if vol.Size == 0 {
 		err = ErrEmptyQuota
 		return
@@ -184,7 +172,6 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't create directory %s", absPath)
-		log.WithError(err).Error("volume creation failed")
 		return
 	}
 
@@ -196,12 +183,10 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 		err = errors.Wrapf(err,
 			"Couldn't set quota for volume name=%s size=%d inode=%d",
 			vol.Name, vol.Size, vol.INode)
-		log.WithError(err).Error("volume creation failed")
 		os.RemoveAll(absPath)
 		return
 	}
 
-	log.Debug("volume created")
 	return
 }
 

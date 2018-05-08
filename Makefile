@@ -13,7 +13,7 @@ install:
 		go install \
 			-ldflags "-X main.version=$(VERSION)" \
 			-v
-	cd ./main && \
+	cd ./plugin && \
 		go install \
 			-ldflags "-X main.version=$(VERSION)" \
 			-v

@@ -1,50 +1,54 @@
-hash: 3ae8d93df1edb96c7fb58dd53cae8113e47dc83abaf2d2b7bc2ead2fff6eb642
-updated: 2017-07-18T08:58:24.269762024-03:00
+hash: 4cee7f7ee53e83fc6a802ef459c4938d305750e8ff1f4ce87844aec60e88b48d
+updated: 2018-05-08T11:25:29.516358528Z
 imports:
 - name: github.com/coreos/go-systemd
-  version: 24036eb3df68550d24a2736c5d013f4e83366866
+  version: d1b7d058aa2adfc795ad17ff4aaa2bc64ec11c78
   subpackages:
   - activation
 - name: github.com/docker/go-connections
-  version: 3ede32e2033de7505e6500d6c868c2b9ed9f169d
+  version: 7395e3f8aa162843a74ed6d48e79627d9792ac55
   subpackages:
   - sockets
 - name: github.com/docker/go-plugins-helpers
-  version: abb3e589c0322ddc019c2ec5f587ea0df2024869
+  version: 61cb8e2334204460162c8bd2417cd43cb71da66f
   subpackages:
   - sdk
   - volume
 - name: github.com/docker/go-units
-  version: f2d77a61e3c169b43402a0a1e84f06daf29b8190
+  version: 47565b4f722fb6ceae66b95f853feed578a4a51c
 - name: github.com/Microsoft/go-winio
-  version: c4dc1301f1dc0307acd38e611aa375a64dfe0642
+  version: ab35fc04b6365e8fcb18e6e9e41ea4a02b10b175
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
-- name: github.com/sirupsen/logrus
-  version: 202f25545ea4cf9b191ff7f846df5d87c9382c2b
-- name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+- name: github.com/rs/zerolog
+  version: 05eafee0eb17d0150591a8f30f0fa592cc9b7471
   subpackages:
-  - assert
+  - internal/cbor
+  - internal/json
 - name: github.com/ventu-io/go-shortid
   version: 6c56cef5189ca1b3d5ef01dc07f4d611dfc0bb33
 - name: golang.org/x/net
-  version: b3756b4b77d7b13260a0a2ec658753cf48922eac
+  version: d11bb6cd8e3c4e60239c9cb20ef68586d74500d0
   subpackages:
+  - internal/socks
   - proxy
 - name: golang.org/x/sys
-  version: 4cd6d1a821c7175768725b55ca82f14683a29ea4
+  version: 7db1c3b1a98089d0071c84f646ff5c96aad43682
   subpackages:
   - unix
   - windows
 - name: gopkg.in/urfave/cli.v1
-  version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+  version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
 testImports:
 - name: github.com/davecgh/go-spew
-  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  version: 8991bc29aa16c548c550c7ff78260e27b9ab7c73
   subpackages:
   - spew
 - name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib
+- name: github.com/stretchr/testify
+  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
+  subpackages:
+  - assert

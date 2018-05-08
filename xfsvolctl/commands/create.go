@@ -4,8 +4,6 @@ import (
 	"github.com/cirocosta/xfsvol/manager"
 	"github.com/pkg/errors"
 	"gopkg.in/urfave/cli.v1"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var Create = cli.Command{
@@ -85,7 +83,7 @@ var Create = cli.Command{
 			return
 		}
 
-		location, err := mgr.Create(manager.Volume{
+		_, err = mgr.Create(manager.Volume{
 			Name:  name,
 			Size:  sizeInBytes,
 			INode: inode,
@@ -97,12 +95,6 @@ var Create = cli.Command{
 			return
 		}
 
-		log.
-			WithField("location", location).
-			WithField("name", name).
-			WithField("size", size).
-			WithField("inode", inode).
-			Info("volume created")
 		return
 	},
 }

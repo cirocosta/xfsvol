@@ -1,4 +1,4 @@
-// Copyright 2015 CoreOS, Inc.
+// Copyright 2015, 2018 CoreOS, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -613,7 +613,7 @@ func TestEnableDisableUnit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if install != false {
+	if install {
 		t.Log("Install was true")
 	}
 
@@ -639,6 +639,38 @@ func TestEnableDisableUnit(t *testing.T) {
 	}
 	if dChanges[0].Destination != "" {
 		t.Fatalf("Change destination should be empty, %+v", dChanges[0])
+	}
+}
+
+// TestSystemState tests if system state is one of the valid states
+func TestSystemState(t *testing.T) {
+	conn := setupConn(t)
+	defer conn.Close()
+
+	prop, err := conn.SystemState()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if prop.Name != "SystemState" {
+		t.Fatalf("unexpected property name: %v", prop.Name)
+	}
+
+	val := prop.Value.Value().(string)
+
+	switch val {
+	case "initializing":
+	case "starting":
+	case "running":
+	case "degraded":
+	case "maintenance":
+	case "stopping":
+	case "offline":
+	case "unknown":
+		// valid systemd state - do nothing
+
+	default:
+		t.Fatalf("unexpected property value: %v", val)
 	}
 }
 
@@ -1058,7 +1090,7 @@ func checkTransientUnitRequisite(t *testing.T, trTarget TrUnitProp, trDep TrUnit
 	// Start the target unit
 	err := runStartTrUnit(t, conn, trTarget)
 	if err == nil {
-		return fmt.Errorf("Unit %s is expected to fail, but succeeded.", trTarget.name)
+		return fmt.Errorf("Unit %s is expected to fail, but succeeded", trTarget.name)
 	}
 
 	unit := getUnitStatusSingle(conn, trTarget.name)
@@ -1078,7 +1110,7 @@ func checkTransientUnitRequisiteOv(t *testing.T, trTarget TrUnitProp, trDep TrUn
 	// Start the target unit
 	err := runStartTrUnit(t, conn, trTarget)
 	if err == nil {
-		return fmt.Errorf("Unit %s is expected to fail, but succeeded.", trTarget.name)
+		return fmt.Errorf("Unit %s is expected to fail, but succeeded", trTarget.name)
 	}
 
 	unit := getUnitStatusSingle(conn, trTarget.name)
@@ -1442,7 +1474,7 @@ func TestMaskUnmask(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if install != false {
+	if install {
 		t.Log("Install was true")
 	}
 
@@ -1488,5 +1520,22 @@ func TestReload(t *testing.T) {
 	err := conn.Reload()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestUnitName(t *testing.T) {
+	for _, unit := range []string{
+		"",
+		"foo.service",
+		"foobar",
+		"woof@woof.service",
+		"0123456",
+		"account_db.service",
+		"got-dashes",
+	} {
+		got := unitName(unitPath(unit))
+		if got != unit {
+			t.Errorf("bad result for unitName(%s): got %q, want %q", unit, got, unit)
+		}
 	}
 }
