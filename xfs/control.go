@@ -142,6 +142,8 @@ func NewControl(cfg ControlConfig) (c Control, err error) {
 	return
 }
 
+// GetBackingFsBlockDev retrieves the backing block device
+// configured for the current quota control instance.
 func (c *Control) GetBackingFsBlockDev() (blockDev string) {
 	blockDev = c.backingFsBlockDev
 	return
@@ -220,7 +222,7 @@ func setProjectQuota(backingFsBlockDev string, projectID uint32, quota Quota) (e
 func (q *Control) GetQuota(targetPath string, quota *Quota) (err error) {
 	projectID, ok := q.quotas[targetPath]
 	if !ok {
-		err = errors.Errorf("quota not found for path : %s", targetPath)
+		err = errors.Errorf("projectId not found for path : %s", targetPath)
 		return
 	}
 
@@ -342,22 +344,30 @@ func getDirFd(dir *C.DIR) uintptr {
 	return uintptr(C.dirfd(dir))
 }
 
-// Get the backing block device of the driver home directory
-// and create a block device node under the home directory
-// to be used by quotactl commands
-func makeBackingFsDev(home string) (string, error) {
+// makeBackingFsDev retrieves the backing block device of the
+// driver home directory and creates a block device node under
+// the home directory to be used by quotactl commands
+func makeBackingFsDev(home string) (backingFsBlockDev string, err error) {
 	fileinfo, err := os.Stat(home)
 	if err != nil {
-		return "", err
+		err = errors.Wrapf(err,
+			"failed to retrieve information from file %s", home)
+		return
 	}
 
-	backingFsBlockDev := path.Join(home, "backingFsBlockDev")
+	backingFsBlockDev = path.Join(home, "backingFsBlockDev")
+
 	// Re-create just in case someone copied the home directory over to a new device
 	unix.Unlink(backingFsBlockDev)
 	stat := fileinfo.Sys().(*syscall.Stat_t)
-	if err := unix.Mknod(backingFsBlockDev, unix.S_IFBLK|0600, int(stat.Dev)); err != nil {
-		return "", fmt.Errorf("Failed to mknod %s: %v", backingFsBlockDev, err)
+
+	err = unix.Mknod(backingFsBlockDev, unix.S_IFBLK|0600, int(stat.Dev))
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to mknod for block device %s",
+			backingFsBlockDev)
+		return
 	}
 
-	return backingFsBlockDev, nil
+	return
 }

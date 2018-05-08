@@ -44,4 +44,62 @@ struct fsxattr {
 #define Q_XGETPQUOTA QCMD(Q_XGETQUOTA, PRJQUOTA)
 #endif
 
+/**
+ * Provides the configuration to be used when
+ * invoking the xfs getter and setter commands.
+ */
+typedef struct xfs_quota {
+	__u64 size;
+	__u64 inodes;
+} xfs_quota_t;
+
+/**
+ * Sets the project quota for a given path as
+ * specified in the arguments provided via the
+ * argument `cfg`.
+ *
+ * Returns -1 in case of errors
+ */
+int
+xfs_set_project_quota(const char* fs_block_dev, __u32 project_id, xfs_quota_t*);
+
+/**
+ * Retrieves the quota configuration associated
+ * with a given path as controled by a specified
+ * backing fs block device.
+ *
+ * Returns NULL in case of errors.
+ */
+xfs_quota_t*
+xfs_get_project_quota(const char* fs_block_dev, __u32 project_id);
+
+/**
+ * Sets the project_id of a given directory.
+ *
+ * Returns -1 in case of errors.
+ */
+int
+xfs_set_project_id(const char* dir, __u32 project_id);
+
+/**
+ * Retrieves the project_id of a given targetPath
+ * as managed by a backing_fs_block_dev.
+ *
+ * Returns -1 in case of errors.
+ */
+int
+xfs_get_project_id(const char* dir);
+
+/**
+ * Creates the filesystem block device to control
+ * xfs quotas under a given root.
+ *
+ * `filename` represents the absolute path to the
+ * device to be created.
+ *
+ * Returns -1 in case of errors.
+ */
+int
+xfs_create_fs_block_dev(const char* filename);
+
 #endif
