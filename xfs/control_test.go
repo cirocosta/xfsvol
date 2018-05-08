@@ -1,4 +1,4 @@
-package xfs
+package xfs_test
 
 import (
 	"fmt"
@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	utils "github.com/cirocosta/xfsvol/test_utils"
+	. "github.com/cirocosta/xfsvol/xfs"
 )
 
 const xfsMount = "/mnt/xfs/tmp"
@@ -44,7 +47,7 @@ func TestControl_createsBackingFsBlockDev(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	finfo, err := os.Stat(ctl.backingFsBlockDev)
+	finfo, err := os.Stat(ctl.GetBackingFsBlockDev())
 	assert.NoError(t, err)
 	assert.False(t, finfo.Mode().IsRegular())
 	assert.False(t, finfo.Mode().IsDir())
@@ -141,8 +144,8 @@ func TestControl_flatlyEnforcesDiskQuota(t *testing.T) {
 	fileDir2M, err := os.Create(path.Join(dir2M, "file"))
 	assert.NoError(t, err)
 
-	assert.Error(t, WriteBytes(fileDir1M, 'c', 2*(1<<20)))
-	assert.NoError(t, WriteBytes(fileDir2M, 'c', 1*(1<<20)))
+	assert.Error(t, utils.WriteBytes(fileDir1M, 'c', 2*(1<<20)))
+	assert.NoError(t, utils.WriteBytes(fileDir2M, 'c', 1*(1<<20)))
 }
 
 func TestControl_flatlyEnforcesINodeQuota(t *testing.T) {
@@ -180,6 +183,6 @@ func TestControl_flatlyEnforcesINodeQuota(t *testing.T) {
 	fmt.Printf("A = %+v, dirA=%s\n", quotaA, dirA)
 	fmt.Printf("B = %+v, dirB=%s\n", quotaB, dirB)
 
-	assert.Error(t, CreateFiles(dirA, 100))
-	assert.NoError(t, CreateFiles(dirB, 100))
+	assert.Error(t, utils.CreateFiles(dirA, 100))
+	assert.NoError(t, utils.CreateFiles(dirB, 100))
 }

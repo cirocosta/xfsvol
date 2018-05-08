@@ -60,11 +60,12 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"golang.org/x/sys/unix"
 )
 
-// Quota limit params
+// Quota defines the limit params to be applied or that
+// are already set to a project:
 // -	Size:	number of blk sizes that can be
 //		commited
 // -	INode:	maximum number of INodes that
@@ -80,6 +81,7 @@ type Control struct {
 	backingFsBlockDev string
 	nextProjectID     uint32
 	quotas            map[string]uint32
+	logger            zerolog.Logger
 }
 
 // ControlConfig specifies the configuration to be used by
@@ -120,6 +122,8 @@ func NewControl(cfg ControlConfig) (c Control, err error) {
 		err = errors.Errorf("BasePath must be provided")
 		return
 	}
+
+	c.logger = zerolog.New(os.Stdout).With().Str("from", "control").Logger()
 
 	if cfg.StartingProjectId == nil {
 		minProjectID, err = getProjectID(cfg.BasePath)
@@ -174,15 +178,21 @@ func NewControl(cfg ControlConfig) (c Control, err error) {
 		return
 	}
 
-	logrus.Infof("NewControl(%s): nextProjectID = %d",
-		cfg.BasePath,
-		c.nextProjectID)
+	c.logger.Debug().
+		Str("base-path", cfg.BasePath).
+		Uint32("next-project-id", c.nextProjectID).
+		Msg("new control created")
 
 	return
 }
 
-// SetQuota - assign a unique project id to directory and set the quota limits
-// for that project id
+func (c *Control) GetBackingFsBlockDev() (blockDev string) {
+	blockDev = c.backingFsBlockDev
+	return
+}
+
+// SetQuota assigns a unique project id to directory and set the
+// quota for that project id.
 func (q *Control) SetQuota(targetPath string, quota Quota) (err error) {
 	projectID, ok := q.quotas[targetPath]
 	if !ok {
@@ -201,18 +211,19 @@ func (q *Control) SetQuota(targetPath string, quota Quota) (err error) {
 		q.nextProjectID++
 	}
 
-	// set the quota limit for the container's project id
-
-	logrus.
-		WithField("project-id", projectID).
-		WithField("target-path", targetPath).
-		WithField("size", quota.Size).
-		WithField("inode", quota.INode).
-		Infof("setting quota")
+	q.logger.Debug().
+		Uint32("project-id", projectID).
+		Str("target-path", targetPath).
+		Uint64("quota-size", quota.Size).
+		Uint64("quota-inode", quota.INode).
+		Msg("settings quota")
 
 	err = setProjectQuota(q.backingFsBlockDev, projectID, quota)
 	if err != nil {
-		err = errors.Wrapf(err, "Couldn't set project quota")
+		err = errors.Wrapf(err,
+			"Couldn't set project quota for target-path %s",
+			targetPath)
+		return
 	}
 
 	return
