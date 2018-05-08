@@ -25,6 +25,8 @@ test:
 
 fmt:
 	go fmt ./...
+	find ./xfs -name "*.c" -o -name "*.h" | \
+		xargs clang-format -style=file -i
 
 
 rootfs-image:
