@@ -59,32 +59,58 @@ func makeBigString(size int) (res string) {
 	return
 }
 
-func TestGetProjectId_failsIfNotDirectory(t *testing.T) {
-	root, err := setupTestFs("", []string{"/file.txt"})
-	assert.NoError(t, err)
-	defer os.RemoveAll(root)
+func TestGetProjectId(t *testing.T) {
+	var testCases = []struct {
+		desc        string
+		projectId   uint32
+		fs          []string
+		target      string
+		shouldError bool
+	}{
+		{
+			desc:        "fails if not a directory",
+			fs:          []string{"/file.txt"},
+			target:      "file.txt",
+			shouldError: true,
+		},
+		{
+			desc:        "fails if directory doesnt exist",
+			fs:          []string{"/"},
+			target:      "dir",
+			shouldError: true,
+		},
+		{
+			desc:        "returns zero if no attributes associated",
+			fs:          []string{"/dir"},
+			target:      "dir",
+			shouldError: false,
+			projectId:   0,
+		},
+	}
 
-	_, err = xfs.GetProjectId(filepath.Join(root, "file.txt"))
-	assert.Error(t, err)
-}
+	var (
+		err       error
+		root      string
+		projectId uint32
+	)
 
-func TestGetProjectId_failsIfDirectoryDoesntExist(t *testing.T) {
-	root, err := setupTestFs("", []string{""})
-	assert.NoError(t, err)
-	defer os.RemoveAll(root)
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			root, err = setupTestFs("", tc.fs)
+			assert.NoError(t, err)
+			defer os.RemoveAll(root)
 
-	_, err = xfs.GetProjectId(filepath.Join(root, "dir"))
-	assert.Error(t, err)
-}
+			projectId, err = xfs.GetProjectId(filepath.Join(root, tc.target))
+			if tc.shouldError {
+				assert.Error(t, err)
+				return
+			}
 
-func TestGetProjectId_returnsZeroIfNoAttributeAssociated(t *testing.T) {
-	root, err := setupTestFs("", []string{"/dir"})
-	assert.NoError(t, err)
-	defer os.RemoveAll(root)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.projectId, projectId)
+		})
+	}
 
-	projectId, err := xfs.GetProjectId(filepath.Join(root, "dir"))
-	assert.NoError(t, err)
-	assert.Equal(t, 0, int(projectId))
 }
 
 func TestMakeBackingFsDev(t *testing.T) {
