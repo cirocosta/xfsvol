@@ -189,9 +189,9 @@ func TestList_listsDirectories(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, dirs, 2)
 	assert.Equal(t, "abc", dirs[0].Name)
-	assert.Equal(t, "10 MB", manager.HumanSize(dirs[0].Size))
+	assert.Equal(t, "10MB", manager.HumanSize(dirs[0].Size))
 	assert.Equal(t, "def", dirs[1].Name)
-	assert.Equal(t, "10 MB", manager.HumanSize(dirs[1].Size))
+	assert.Equal(t, "10MB", manager.HumanSize(dirs[1].Size))
 }
 
 func TestGet_doesntErrorIfNotFound(t *testing.T) {
