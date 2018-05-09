@@ -32,6 +32,28 @@ func GetProjectId(directory string) (projectId uint32, err error) {
 	return
 }
 
+// SetProjectId sets the value of the extended attribute projectid associated
+// with a given directory, as well as setting necessary flags (PROJINHERIT).
+func SetProjectId(directory string, projectId uint32) (err error) {
+	if directory == "" {
+		err = errors.Errorf("directory must be specified")
+		return
+	}
+
+	var directoryString = C.CString(directory)
+	defer C.free(unsafe.Pointer(directoryString))
+
+	ret, err := C.xfs_set_project_id(directoryString, C.__u32(projectId))
+	if ret == -1 {
+		err = errors.Wrapf(err,
+			"failed to set project-id %d to directory %s",
+			projectId, directory)
+		return
+	}
+
+	return
+}
+
 // MakeBackingFsDev creates a block device under the directory
 // specified in the `root` argument.
 func MakeBackingFsDev(root, file string) (err error) {

@@ -10,6 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	xfsMountPath = "/mnt/xfs"
+)
+
 // setupTestFs takes a filesystem description as
 // a variable and setups the desired structure under
 // a temp directory.
@@ -111,6 +115,104 @@ func TestGetProjectId(t *testing.T) {
 		})
 	}
 
+}
+
+func TestSetProjectId(t *testing.T) {
+	var testCases = []struct {
+		desc        string
+		projectId   uint32
+		fs          []string
+		fsBasePath  string
+		target      string
+		shouldError bool
+		basePath    string
+	}{
+		{
+			desc:        "fails if not a directory",
+			fs:          []string{"/file.txt"},
+			fsBasePath:  filepath.Join(xfsMountPath, "/tmp"),
+			target:      "file.txt",
+			shouldError: true,
+		},
+		{
+			desc:        "fails if directory doesnt exist",
+			fs:          []string{"/"},
+			fsBasePath:  filepath.Join(xfsMountPath, "/tmp"),
+			target:      "dir",
+			shouldError: true,
+		},
+		{
+			desc:        "fails if not an xfs filesystem",
+			fs:          []string{"/dir"},
+			target:      "dir",
+			fsBasePath:  "/tmp",
+			projectId:   123,
+			shouldError: true,
+		},
+		{
+			desc:        "associates projectid with directory in xfs fs",
+			fs:          []string{"/dir"},
+			target:      "dir",
+			fsBasePath:  filepath.Join(xfsMountPath, "/tmp"),
+			projectId:   123,
+			shouldError: false,
+		},
+	}
+
+	var (
+		err       error
+		root      string
+		projectId uint32
+	)
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			root, err = setupTestFs(tc.fsBasePath, tc.fs)
+			assert.NoError(t, err)
+			defer os.RemoveAll(root)
+
+			err = xfs.SetProjectId(filepath.Join(root, tc.target), tc.projectId)
+			if tc.shouldError {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+
+			projectId, err = xfs.GetProjectId(filepath.Join(root, tc.target))
+			assert.NoError(t, err)
+			assert.Equal(t, tc.projectId, projectId)
+		})
+	}
+}
+
+func TestSetProjectId_childrenHaveProjectIdSet(t *testing.T) {
+	const desiredProjectId uint32 = 543
+
+	var (
+		root      string
+		err       error
+		projectId uint32
+	)
+
+	root, err = setupTestFs(
+		filepath.Join(xfsMountPath, "/tmp"),
+		[]string{"/dir"})
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	err = xfs.SetProjectId(filepath.Join(root, "/dir"), desiredProjectId)
+	assert.NoError(t, err)
+
+	err = os.MkdirAll(filepath.Join(root, "/dir", "/child"), 0755)
+	assert.NoError(t, err)
+
+	projectId, err = xfs.GetProjectId(filepath.Join(root, "/dir"))
+	assert.NoError(t, err)
+	assert.Equal(t, desiredProjectId, projectId)
+
+	projectId, err = xfs.GetProjectId(filepath.Join(root, "/dir", "/child"))
+	assert.NoError(t, err)
+	assert.Equal(t, desiredProjectId, projectId)
 }
 
 func TestMakeBackingFsDev(t *testing.T) {

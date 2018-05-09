@@ -5,26 +5,61 @@ int
 xfs_get_project_id(const char* dir)
 {
 	int            err = 0;
-	int            temp_errno;
+	int            save_errno;
 	int            dir_fd;
 	struct fsxattr fs_xattr = { 0 };
 
 	dir_fd = open(dir, O_RDONLY | O_DIRECTORY);
-
 	if (dir_fd == -1) {
 		return -1;
 	}
 
 	err = ioctl(dir_fd, FS_IOC_FSGETXATTR, &fs_xattr);
 	if (err == -1) {
-		temp_errno = errno;
+		save_errno = errno;
 		close(dir_fd);
-		errno = temp_errno;
+		errno = save_errno;
 		return -1;
 	}
 
 	close(dir_fd);
 	return fs_xattr.fsx_projid;
+}
+
+int
+xfs_set_project_id(const char* dir, __u32 project_id)
+{
+	int            dir_fd;
+	int            err = 0;
+	int            save_errno;
+	struct fsxattr fs_xattr = { 0 };
+
+	dir_fd = open(dir, O_RDONLY | O_DIRECTORY);
+	if (dir_fd == -1) {
+		return -1;
+	}
+
+	err = ioctl(dir_fd, FS_IOC_FSGETXATTR, &fs_xattr);
+	if (err == -1) {
+		save_errno = errno;
+		close(dir_fd);
+		errno = save_errno;
+		return -1;
+	}
+
+	fs_xattr.fsx_projid = project_id;
+	fs_xattr.fsx_xflags |= FS_XFLAG_PROJINHERIT;
+
+	err = ioctl(dir_fd, FS_IOC_FSSETXATTR, &fs_xattr);
+	if (err == -1) {
+		save_errno = errno;
+		close(dir_fd);
+		errno = save_errno;
+		return -1;
+	}
+
+	close(dir_fd);
+	return 0;
 }
 
 int
