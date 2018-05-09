@@ -1,4 +1,5 @@
 #include "./xfs.h"
+#include <stdio.h>
 
 int
 xfs_get_project_id(const char* dir)
@@ -8,7 +9,8 @@ xfs_get_project_id(const char* dir)
 	int            dir_fd;
 	struct fsxattr fs_xattr = { 0 };
 
-	dir_fd = open(dir, O_DIRECTORY | O_PATH);
+	dir_fd = open(dir, O_RDONLY | O_DIRECTORY);
+
 	if (dir_fd == -1) {
 		return -1;
 	}

@@ -13,13 +13,13 @@ import (
 // setupTestFs takes a filesystem description as
 // a variable and setups the desired structure under
 // a temp directory.
-func setupTestFs(fs []string) (root string, err error) {
+func setupTestFs(base string, fs []string) (root string, err error) {
 	var (
 		extension string
 		directory string
 	)
 
-	root, err = ioutil.TempDir("", "")
+	root, err = ioutil.TempDir(base, "")
 	if err != nil {
 		return
 	}
@@ -59,22 +59,32 @@ func makeBigString(size int) (res string) {
 	return
 }
 
-func TestGetProjectId(t *testing.T) {
-	var (
-		fs = []string{
-			"/file.txt",
-		}
-		root      string
-		err       error
-		projectId uint32
-	)
-
-	root, err = setupTestFs(fs)
+func TestGetProjectId_failsIfNotDirectory(t *testing.T) {
+	root, err := setupTestFs("", []string{"/file.txt"})
 	assert.NoError(t, err)
+	defer os.RemoveAll(root)
 
-	projectId, err = xfs.GetProjectId(filepath.Join(root, "file.txt"))
+	_, err = xfs.GetProjectId(filepath.Join(root, "file.txt"))
+	assert.Error(t, err)
+}
+
+func TestGetProjectId_failsIfDirectoryDoesntExist(t *testing.T) {
+	root, err := setupTestFs("", []string{""})
 	assert.NoError(t, err)
-	assert.Equal(t, uint32(0), projectId)
+	defer os.RemoveAll(root)
+
+	_, err = xfs.GetProjectId(filepath.Join(root, "dir"))
+	assert.Error(t, err)
+}
+
+func TestGetProjectId_returnsZeroIfNoAttributeAssociated(t *testing.T) {
+	root, err := setupTestFs("", []string{"/dir"})
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	projectId, err := xfs.GetProjectId(filepath.Join(root, "dir"))
+	assert.NoError(t, err)
+	assert.Equal(t, 0, int(projectId))
 }
 
 func TestMakeBackingFsDev(t *testing.T) {
@@ -128,7 +138,7 @@ func TestMakeBackingFsDev(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			root, err = setupTestFs(tc.fs)
+			root, err = setupTestFs("", tc.fs)
 			assert.NoError(t, err)
 			defer os.RemoveAll(root)
 

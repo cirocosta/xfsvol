@@ -9,7 +9,26 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetProjectId retrieves the extended attribute projectid associated
+// with a given directory.
 func GetProjectId(directory string) (projectId uint32, err error) {
+	if directory == "" {
+		err = errors.Errorf("directory must be specified")
+		return
+	}
+
+	var directoryString = C.CString(directory)
+	defer C.free(unsafe.Pointer(directoryString))
+
+	ret, err := C.xfs_get_project_id(directoryString)
+	if ret == -1 {
+		err = errors.Wrapf(err,
+			"failed to get project-id from directory %s",
+			directory)
+		return
+	}
+
+	projectId = uint32(ret)
 	return
 }
 
