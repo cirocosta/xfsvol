@@ -93,10 +93,10 @@ func (m Manager) List() (vols []Volume, err error) {
 
 	for _, file := range files {
 		if file.IsDir() {
-			quota := xfs.Quota{}
+			var quota *xfs.Quota
 			absPath := filepath.Join(m.root, file.Name())
 
-			err = m.quotaCtl.GetQuota(absPath, &quota)
+			quota, err = m.quotaCtl.GetQuota(absPath)
 			if err != nil {
 				err = errors.Wrapf(err,
 					"Couldn't retrieve quota for directory %s",
@@ -134,10 +134,10 @@ func (m Manager) Get(name string) (vol Volume, found bool, err error) {
 	for _, file := range files {
 		if file.IsDir() && file.Name() == name {
 			found = true
-			quota := xfs.Quota{}
+			var quota *xfs.Quota
 			absPath = filepath.Join(m.root, name)
 
-			err = m.quotaCtl.GetQuota(absPath, &quota)
+			quota, err = m.quotaCtl.GetQuota(absPath)
 			if err != nil {
 				err = errors.Wrapf(err,
 					"Couldn't retrieve quota for directory %s",
