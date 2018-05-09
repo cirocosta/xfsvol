@@ -4,7 +4,7 @@
 // on a newly created directory.
 package xfs
 
-// #include "./control.h"
+// #include "./xfs.h"
 import "C"
 
 import (

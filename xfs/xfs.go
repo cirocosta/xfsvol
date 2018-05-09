@@ -1,6 +1,6 @@
 package xfs
 
-// #include "./control.h"
+// #include "./xfs.h"
 import "C"
 
 import (
@@ -8,6 +8,10 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+func GetProjectId(directory string) (projectId uint32, err error) {
+	return
+}
 
 // MakeBackingFsDev creates a block device under the directory
 // specified in the `root` argument.

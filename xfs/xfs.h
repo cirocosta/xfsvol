@@ -1,11 +1,23 @@
 #ifndef __CONTROL_H
 #define __CONTROL_H
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <linux/dqblk_xfs.h>
 #include <linux/fs.h>
 #include <linux/quota.h>
-#include <stdlib.h>
+
+#include <sys/ioctl.h>
+#include <sys/stat.h>
 
 #ifndef FS_XFLAG_PROJINHERIT
 

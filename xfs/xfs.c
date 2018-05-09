@@ -1,7 +1,29 @@
-#include "./control.h"
-#include <errno.h>
-#include <string.h>
-#include <sys/stat.h>
+#include "./xfs.h"
+
+int
+xfs_get_project_id(const char* dir)
+{
+	int            err = 0;
+	int            temp_errno;
+	int            dir_fd;
+	struct fsxattr fs_xattr = { 0 };
+
+	dir_fd = open(dir, O_DIRECTORY | O_PATH);
+	if (dir_fd == -1) {
+		return -1;
+	}
+
+	err = ioctl(dir_fd, FS_IOC_FSGETXATTR, &fs_xattr);
+	if (err == -1) {
+		temp_errno = errno;
+		close(dir_fd);
+		errno = temp_errno;
+		return -1;
+	}
+
+	close(dir_fd);
+	return fs_xattr.fsx_projid;
+}
 
 int
 xfs_create_fs_block_dev(const char* dir, const char* filename)

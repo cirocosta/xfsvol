@@ -47,6 +47,8 @@ func setupTestFs(fs []string) (root string, err error) {
 	return
 }
 
+// makeBigString creates a string filled with a single
+// character that is `size` big.
 func makeBigString(size int) (res string) {
 	var buffer = make([]byte, size)
 	for ndx := range buffer {
@@ -55,6 +57,24 @@ func makeBigString(size int) (res string) {
 
 	res = string(buffer)
 	return
+}
+
+func TestGetProjectId(t *testing.T) {
+	var (
+		fs = []string{
+			"/file.txt",
+		}
+		root      string
+		err       error
+		projectId uint32
+	)
+
+	root, err = setupTestFs(fs)
+	assert.NoError(t, err)
+
+	projectId, err = xfs.GetProjectId(filepath.Join(root, "file.txt"))
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(0), projectId)
 }
 
 func TestMakeBackingFsDev(t *testing.T) {
