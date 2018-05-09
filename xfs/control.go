@@ -5,7 +5,6 @@
 package xfs
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,10 +21,27 @@ const blockDeviceName = "backingFsBlockDev"
 // Control gives the context to be used by storage driver
 // who wants to apply project quotas to container dirs.
 type Control struct {
+	logger zerolog.Logger
+
+	// backingFsBlockDev is the absolute path to the
+	// block device that keeps track of quotas under
+	// a given basePath (root of the project quota tree).
 	backingFsBlockDev string
-	nextProjectID     uint32
-	quotas            map[string]uint32
-	logger            zerolog.Logger
+
+	// projectIdCache keeps track of the relation between
+	// directories and project-ids.
+	//
+	// By making use of an in-memory cache we can avoid
+	// using `cgo` too many times to just gather the
+	// `projectId` of a given directory.
+	projectIdCache map[string]uint32
+
+	// lastProjectId keeps track of the last projectId
+	// that has beem used. The purpose of it is to not
+	// have a conflict with existing projectIds while at
+	// the same time also have not to iterate over the
+	// projectIdCache map.
+	lastProjectId uint32
 }
 
 // ControlConfig specifies the configuration to be used by
@@ -35,34 +51,19 @@ type ControlConfig struct {
 	BasePath          string
 }
 
-// NewControl initializes project quota support.
+// NewControl initializes project quota support under a given
+// preconfigured BasePath.
+//
+// It does so by creating a block device right at BasePath
+// and then having XFS manage quotas under this path by assigning
+// project ids to each directory and binding such project ids
+// with quotas.
 func NewControl(cfg ControlConfig) (c Control, err error) {
-	var minProjectID uint32
-
 	if cfg.BasePath == "" {
 		err = errors.Errorf("BasePath must be provided")
 		return
 	}
 
-	c.logger = zerolog.New(os.Stdout).With().Str("from", "control").Logger()
-
-	if cfg.StartingProjectId == nil {
-		minProjectID, err = GetProjectId(cfg.BasePath)
-		if err != nil {
-			err = errors.Wrapf(err,
-				"failed to retrieve projectid from basepath %s",
-				cfg.BasePath)
-			return
-		}
-
-		minProjectID++
-	} else {
-		minProjectID = *cfg.StartingProjectId
-	}
-
-	//
-	// create backing filesystem device node
-	//
 	err = MakeBackingFsDev(cfg.BasePath, blockDeviceName)
 	if err != nil {
 		err = errors.Wrapf(err,
@@ -72,57 +73,54 @@ func NewControl(cfg ControlConfig) (c Control, err error) {
 	}
 
 	c.backingFsBlockDev = filepath.Join(cfg.BasePath, blockDeviceName)
+	c.logger = zerolog.New(os.Stdout).With().
+		Str("from", "control").
+		Logger()
 
-	//
-	// Test if filesystem supports project quotas by trying to set
-	// a quota on the first available project id
-	err = SetProjectQuota(c.backingFsBlockDev, minProjectID, &Quota{
-		Size: 0,
-	})
+	c.projectIdCache, err = GeneratePathToProjectIdMap(cfg.BasePath)
 	if err != nil {
 		err = errors.Wrapf(err,
-			"failed to set quota on the first available"+
-				" proj id after base path %s",
+			"failed to create projectid cache from basepath %s",
 			cfg.BasePath)
 		return
 	}
 
-	c.nextProjectID = minProjectID + 1
-	c.quotas = make(map[string]uint32)
-
-	//
-	// get first project id to be used for next container
-	//
-	err = c.findNextProjectID(cfg.BasePath)
-	if err != nil {
-		err = errors.Wrapf(err,
-			"failed to find next projectId from basepath %s", cfg.BasePath)
-		return
+	for _, projectId := range c.projectIdCache {
+		if projectId > c.lastProjectId {
+			c.lastProjectId = projectId
+		}
 	}
 
 	c.logger.Debug().
 		Str("base-path", cfg.BasePath).
-		Uint32("next-project-id", c.nextProjectID).
+		Uint32("last-project-id", c.lastProjectId).
 		Msg("new control created")
 
 	return
 }
 
-// GetBackingFsBlockDev retrieves the backing block device
-// configured for the current quota control instance.
+// GetBackingFsBlockDev retrieves the absolute path of the backing
+// block device configured for the current quota control instance.
 func (c *Control) GetBackingFsBlockDev() (blockDev string) {
 	blockDev = c.backingFsBlockDev
 	return
 }
 
+// GetQuota retrieves the quota settings associated with a targetPath
+// that previously had a quota set for it.
+//
+// TODO differentiate between real errors and no quota being set
+//	for the path.
 func (c *Control) GetQuota(targetPath string) (q *Quota, err error) {
-	projectID, ok := c.quotas[targetPath]
+	projectId, ok := c.projectIdCache[targetPath]
 	if !ok {
-		err = errors.Errorf("projectId not found for path : %s", targetPath)
+		err = errors.Errorf(
+			"no projectId associated with the path %s",
+			targetPath)
 		return
 	}
 
-	q, err = GetProjectQuota(c.backingFsBlockDev, projectID)
+	q, err = GetProjectQuota(c.backingFsBlockDev, projectId)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"failed to retrieve quota")
@@ -132,67 +130,77 @@ func (c *Control) GetQuota(targetPath string) (q *Quota, err error) {
 	return
 }
 
-// SetQuota assigns a unique project id to directory and set the
-// quota for that project id.
-func (q *Control) SetQuota(targetPath string, quota Quota) (err error) {
-	projectID, ok := q.quotas[targetPath]
+// SetQuota assigns a unique project id to a directory and then set the
+// quota for that projectId.
+func (c *Control) SetQuota(targetPath string, quota Quota) (err error) {
+	projectId, ok := c.projectIdCache[targetPath]
 	if !ok {
-		projectID = q.nextProjectID
-
-		//
-		// assign project id to new container directory
-		//
-		err = SetProjectId(targetPath, projectID)
+		projectId = c.lastProjectId + 1
+		err = SetProjectId(targetPath, projectId)
 		if err != nil {
-			err = errors.Wrapf(err, "couldn't set project id")
+			err = errors.Wrapf(err,
+				"couldn't set project id to path %s",
+				targetPath)
 			return
 		}
 
-		q.quotas[targetPath] = projectID
-		q.nextProjectID++
+		c.projectIdCache[targetPath] = projectId
+		c.lastProjectId = projectId
 	}
 
-	q.logger.Debug().
-		Uint32("project-id", projectID).
+	c.logger.Debug().
+		Uint32("project-id", projectId).
 		Str("target-path", targetPath).
 		Uint64("quota-size", quota.Size).
 		Uint64("quota-inode", quota.INode).
 		Msg("settings quota")
 
-	err = SetProjectQuota(q.backingFsBlockDev, projectID, &quota)
+	err = SetProjectQuota(c.backingFsBlockDev, projectId, &quota)
 	if err != nil {
 		err = errors.Wrapf(err,
-			"Couldn't set project quota for target-path %s",
-			targetPath)
+			"Couldn't set project quota %+v for target-path %s",
+			quota, targetPath)
 		return
 	}
 
 	return
 }
 
-// findNextProjectID - find the next project id to be used for containers
-// by scanning driver home directory to find used project ids
-func (q *Control) findNextProjectID(home string) error {
-	files, err := ioutil.ReadDir(home)
+// GeneratePathToProjectIdMap creates a map that maps the
+// projectIds associated with paths directly under a giving
+// root path.
+func GeneratePathToProjectIdMap(root string) (mapping map[string]uint32, err error) {
+	var (
+		files     []os.FileInfo
+		absPath   string
+		projectId uint32
+	)
+
+	files, err = ioutil.ReadDir(root)
 	if err != nil {
-		return fmt.Errorf("read directory failed : %s", home)
+		err = errors.Wrapf(err,
+			"failed to list files and directories under path %s",
+			root)
+		return
 	}
+
+	mapping = make(map[string]uint32)
 	for _, file := range files {
 		if !file.IsDir() {
 			continue
 		}
-		path := filepath.Join(home, file.Name())
-		projid, err := GetProjectId(path)
+
+		absPath = filepath.Join(root, file.Name())
+		projectId, err = GetProjectId(absPath)
 		if err != nil {
-			return err
+			err = errors.Wrapf(err,
+				"failed to retrieve projectid for directory %s",
+				absPath)
+			return
 		}
-		if projid > 0 {
-			q.quotas[path] = projid
-		}
-		if q.nextProjectID <= projid {
-			q.nextProjectID = projid + 1
-		}
+
+		mapping[absPath] = projectId
 	}
 
-	return nil
+	return
 }
