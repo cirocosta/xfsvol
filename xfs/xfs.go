@@ -9,6 +9,79 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Quota defines the limit params to be applied or that
+// are already set to a project:
+// -	Size:	number of blk sizes that can be
+//		commited
+// -	INode:	maximum number of INodes that
+//		can be created
+type Quota struct {
+	Size  uint64
+	INode uint64
+}
+
+// SetProjectQuota sets quota settings associated with a given
+// projectId controlled by a given block device.
+func SetProjectQuota(blockDevice string, projectId uint32, q *Quota) (err error) {
+	if blockDevice == "" {
+		err = errors.Errorf("blockDevice must be specified")
+		return
+	}
+
+	var (
+		blockDeviceString = C.CString(blockDevice)
+		quota             = &C.struct_xfs_quota{
+			inodes: C.__u64(q.INode),
+			size:   C.__u64(q.Size),
+		}
+	)
+	defer C.free(unsafe.Pointer(blockDeviceString))
+
+	ret, err := C.xfs_set_project_quota(blockDeviceString,
+		C.__u32(projectId),
+		quota)
+	if ret == -1 {
+		err = errors.Wrapf(err,
+			"failed to set project quota "+
+				"prj=%d dev=%d quota-size=%d quota-inodes=%d",
+			projectId, blockDevice, q.Size, q.INode)
+		return
+	}
+
+	return
+}
+
+// GetProjectQuota retrieves the quota settings associated
+// with a project-id controlled by a given block device.
+func GetProjectQuota(blockDevice string, projectId uint32) (q *Quota, err error) {
+	if blockDevice == "" {
+		err = errors.Errorf("blockDevice must be specified")
+		return
+	}
+
+	var (
+		blockDeviceString = C.CString(blockDevice)
+		quota             = new(C.struct_xfs_quota)
+	)
+	defer C.free(unsafe.Pointer(blockDeviceString))
+
+	ret, err := C.xfs_get_project_quota(blockDeviceString,
+		C.__u32(projectId),
+		quota)
+	if ret == -1 {
+		err = errors.Wrapf(err,
+			"failed to retrieve project quota - prj=%d dev=%s",
+			projectId, blockDevice)
+		return
+	}
+
+	q = new(Quota)
+	q.INode = uint64(quota.inodes)
+	q.Size = uint64(quota.size)
+
+	return
+}
+
 // GetProjectId retrieves the extended attribute projectid associated
 // with a given directory.
 func GetProjectId(directory string) (projectId uint32, err error) {

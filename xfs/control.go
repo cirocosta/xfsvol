@@ -24,17 +24,6 @@ import (
 // keep track of the project quotas.
 const blockDeviceName = "backingFsBlockDev"
 
-// Quota defines the limit params to be applied or that
-// are already set to a project:
-// -	Size:	number of blk sizes that can be
-//		commited
-// -	INode:	maximum number of INodes that
-//		can be created
-type Quota struct {
-	Size  uint64
-	INode uint64
-}
-
 // Control gives the context to be used by storage driver
 // who wants to apply project quotas to container dirs.
 type Control struct {

@@ -73,17 +73,24 @@ typedef struct xfs_quota {
  * Returns -1 in case of errors
  */
 int
-xfs_set_project_quota(const char* fs_block_dev, __u32 project_id, xfs_quota_t*);
+xfs_set_project_quota(const char*  fs_block_dev,
+                      __u32        project_id,
+                      xfs_quota_t* quota);
 
 /**
  * Retrieves the quota configuration associated
  * with a given path as controled by a specified
  * backing fs block device.
  *
- * Returns NULL in case of errors.
+ * The values relative to the project quota are stored
+ * in the provided `quota` reference passed as reference.
+ *
+ * Returns -1 in case of errors.
  */
-xfs_quota_t*
-xfs_get_project_quota(const char* fs_block_dev, __u32 project_id);
+int
+xfs_get_project_quota(const char*  fs_block_dev,
+                      __u32        project_id,
+                      xfs_quota_t* quota);
 
 /**
  * Sets the project_id of a given directory.

@@ -277,3 +277,55 @@ func TestMakeBackingFsDev(t *testing.T) {
 		})
 	}
 }
+
+func TestSetProjectQuota_failsIfBlockDeviceDoesntExist(t *testing.T) {
+	var (
+		fs                           = []string{"/dir"}
+		inexistentProjectId   uint32 = 999
+		inexistentBlockDevice string
+	)
+
+	root, err := setupTestFs(xfsMountPath, fs)
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	inexistentBlockDevice = filepath.Join(root, "inexistent-device")
+
+	err = xfs.SetProjectQuota(inexistentBlockDevice, inexistentProjectId, &xfs.Quota{
+		Size:  123,
+		INode: 123,
+	})
+	assert.Error(t, err)
+}
+
+func TestSetProjectQuota_succeeds(t *testing.T) {
+	var (
+		fs                   = []string{"/dir"}
+		projectId     uint32 = 999
+		expectedQuota        = &xfs.Quota{123, 123}
+		actualQuota   *xfs.Quota
+		blockDevice   string
+	)
+
+	root, err := setupTestFs(xfsMountPath, fs)
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	blockDevice = filepath.Join(root, "block-device")
+	err = xfs.MakeBackingFsDev(root, "block-device")
+	assert.NoError(t, err)
+
+	err = xfs.SetProjectId(filepath.Join(root, "dir"), projectId)
+	assert.NoError(t, err)
+
+	err = xfs.SetProjectQuota(blockDevice, projectId, expectedQuota)
+	assert.NoError(t, err)
+
+	actualQuota, err = xfs.GetProjectQuota(blockDevice, projectId)
+	assert.NoError(t, err)
+
+	assert.Equal(t, expectedQuota.Size, actualQuota.Size)
+	assert.Equal(t, expectedQuota.INode, actualQuota.INode)
+}
+
+// 3. succeeds

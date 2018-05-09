@@ -1,5 +1,53 @@
 #include "./xfs.h"
 #include <stdio.h>
+#include <sys/quota.h>
+
+int
+xfs_set_project_quota(const char*  fs_block_dev,
+                      __u32        project_id,
+                      xfs_quota_t* quota)
+{
+	int             err        = 0;
+	fs_disk_quota_t disk_quota = {
+		.d_version       = FS_DQUOT_VERSION,
+		.d_id            = project_id,
+		.d_flags         = XFS_PROJ_QUOTA,
+		.d_blk_hardlimit = quota->size / 512,
+		.d_blk_softlimit = quota->size / 512,
+		.d_ino_hardlimit = quota->inodes,
+		.d_ino_softlimit = quota->inodes,
+		.d_fieldmask =
+		  FS_DQ_BHARD | FS_DQ_BSOFT | FS_DQ_ISOFT | FS_DQ_IHARD,
+	};
+
+	err =
+	  quotactl(Q_XSETPQLIM, fs_block_dev, project_id, (void*)&disk_quota);
+	if (err == -1) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int
+xfs_get_project_quota(const char*  fs_block_dev,
+                      __u32        project_id,
+                      xfs_quota_t* quota)
+{
+	int             err        = 0;
+	fs_disk_quota_t disk_quota = { 0 };
+
+	err =
+	  quotactl(Q_XGETPQUOTA, fs_block_dev, project_id, (void*)&disk_quota);
+	if (err == -1) {
+		return -1;
+	}
+
+	quota->size   = disk_quota.d_blk_hardlimit * 512;
+	quota->inodes = disk_quota.d_ino_hardlimit;
+
+	return 0;
+}
 
 int
 xfs_get_project_id(const char* dir)
