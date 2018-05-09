@@ -20,7 +20,8 @@ install:
 
 
 test:
-	go test ./... -v
+	cd ./xfs && go test -v ./xfs_test.go
+	#go test ./... -v
 
 
 fmt:

@@ -94,12 +94,13 @@ xfs_get_project_id(const char* dir);
  * Creates the filesystem block device to control
  * xfs quotas under a given root.
  *
- * `filename` represents the absolute path to the
- * device to be created.
+ * `dir` represents the directory (which must already
+ * exist) in which `filename` (name of the special file)
+ * should be created.
  *
  * Returns -1 in case of errors.
  */
 int
-xfs_create_fs_block_dev(const char* filename);
+xfs_create_fs_block_dev(const char* dir, const char* filename);
 
 #endif
