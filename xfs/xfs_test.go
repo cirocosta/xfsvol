@@ -100,7 +100,7 @@ func TestGetProjectId(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			root, err = setupTestFs("", tc.fs)
+			root, err = setupTestFs(xfsMountPath, tc.fs)
 			assert.NoError(t, err)
 			defer os.RemoveAll(root)
 
