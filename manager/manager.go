@@ -8,7 +8,6 @@ import (
 
 	"github.com/cirocosta/xfsvol/xfs"
 	"github.com/pkg/errors"
-	"golang.org/x/sys/unix"
 )
 
 var (
@@ -55,14 +54,6 @@ func New(cfg Config) (manager Manager, err error) {
 	if !filepath.IsAbs(cfg.Root) {
 		err = errors.Errorf(
 			"Root (%s) must be an absolute path",
-			cfg.Root)
-		return
-	}
-
-	err = unix.Access(cfg.Root, unix.W_OK)
-	if err != nil {
-		err = errors.Wrapf(err,
-			"Root (%s) must be writable.",
 			cfg.Root)
 		return
 	}

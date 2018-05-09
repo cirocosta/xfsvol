@@ -11,9 +11,6 @@ import:
   version: v1.6.0
 - package: github.com/ventu-io/go-shortid
   version: v1.0
-- package: golang.org/x/sys
-  subpackages:
-  - unix
 - package: gopkg.in/urfave/cli.v1
   version: v1.20.0
 testImport:

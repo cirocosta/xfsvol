@@ -1,5 +1,5 @@
-hash: 4cee7f7ee53e83fc6a802ef459c4938d305750e8ff1f4ce87844aec60e88b48d
-updated: 2018-05-08T11:25:29.516358528Z
+hash: 54c129168c416b88e4d16748e37e0ca95682696fddbf44cebf5efdc7c03d5666
+updated: 2018-05-09T18:26:07.188730201Z
 imports:
 - name: github.com/coreos/go-systemd
   version: d1b7d058aa2adfc795ad17ff4aaa2bc64ec11c78
@@ -28,14 +28,13 @@ imports:
 - name: github.com/ventu-io/go-shortid
   version: 6c56cef5189ca1b3d5ef01dc07f4d611dfc0bb33
 - name: golang.org/x/net
-  version: d11bb6cd8e3c4e60239c9cb20ef68586d74500d0
+  version: f73e4c9ed3b7ebdd5f699a16a880c2b1994e50dd
   subpackages:
   - internal/socks
   - proxy
 - name: golang.org/x/sys
   version: 7db1c3b1a98089d0071c84f646ff5c96aad43682
   subpackages:
-  - unix
   - windows
 - name: gopkg.in/urfave/cli.v1
   version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
