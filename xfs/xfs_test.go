@@ -302,7 +302,7 @@ func TestSetProjectQuota_succeeds(t *testing.T) {
 	var (
 		fs                   = []string{"/dir"}
 		projectId     uint32 = 999
-		expectedQuota        = &xfs.Quota{123, 123}
+		expectedQuota        = &xfs.Quota{1 << 20, 1 << 20}
 		actualQuota   *xfs.Quota
 		blockDevice   string
 	)
@@ -327,5 +327,3 @@ func TestSetProjectQuota_succeeds(t *testing.T) {
 	assert.Equal(t, expectedQuota.Size, actualQuota.Size)
 	assert.Equal(t, expectedQuota.INode, actualQuota.INode)
 }
-
-// 3. succeeds

@@ -17,6 +17,7 @@
 #include <linux/quota.h>
 
 #include <sys/ioctl.h>
+#include <sys/quota.h>
 #include <sys/stat.h>
 
 #ifndef FS_XFLAG_PROJINHERIT

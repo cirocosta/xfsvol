@@ -1,6 +1,4 @@
 #include "./xfs.h"
-#include <stdio.h>
-#include <sys/quota.h>
 
 int
 xfs_set_project_quota(const char*  fs_block_dev,
