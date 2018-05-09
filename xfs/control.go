@@ -71,6 +71,8 @@ func NewControl(cfg ControlConfig) (c Control, err error) {
 		return
 	}
 
+	c.backingFsBlockDev = filepath.Join(cfg.BasePath, blockDeviceName)
+
 	//
 	// Test if filesystem supports project quotas by trying to set
 	// a quota on the first available project id
