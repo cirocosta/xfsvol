@@ -14,17 +14,6 @@ import (
 
 const xfsMount = "/mnt/xfs/tmp"
 
-func TestControl_failsIfNotXfsDirectory(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
-	assert.NoError(t, err)
-	defer os.RemoveAll(dir)
-
-	_, err = xfs.NewControl(xfs.ControlConfig{
-		BasePath: dir,
-	})
-	assert.Error(t, err)
-}
-
 func TestControl_succeedsIfXFSBasedDirectory(t *testing.T) {
 	dir, err := ioutil.TempDir(xfsMount, "")
 	assert.NoError(t, err)

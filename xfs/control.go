@@ -48,7 +48,13 @@ type Control struct {
 // the controller that will hold the quota allocation state.
 type ControlConfig struct {
 	StartingProjectId *uint32
-	BasePath          string
+
+	// BasePath is the base in which all the directories
+	// which quotas are applied get created from.
+	//
+	// Right in `BasePath` is also where a block device
+	// is put to keep track of the quotas.
+	BasePath string
 }
 
 // NewControl initializes project quota support under a given
@@ -62,6 +68,10 @@ func NewControl(cfg ControlConfig) (c Control, err error) {
 	if cfg.BasePath == "" {
 		err = errors.Errorf("BasePath must be provided")
 		return
+	}
+
+	if cfg.StartingProjectId != nil {
+		c.lastProjectId = *cfg.StartingProjectId
 	}
 
 	err = MakeBackingFsDev(cfg.BasePath, blockDeviceName)
@@ -133,6 +143,8 @@ func (c *Control) GetQuota(targetPath string) (q *Quota, err error) {
 // SetQuota assigns a unique project id to a directory and then set the
 // quota for that projectId.
 func (c *Control) SetQuota(targetPath string, quota Quota) (err error) {
+	c.logger.Debug().Interface("cache", c.projectIdCache).Msg("will set quota")
+
 	projectId, ok := c.projectIdCache[targetPath]
 	if !ok {
 		projectId = c.lastProjectId + 1
@@ -146,14 +158,17 @@ func (c *Control) SetQuota(targetPath string, quota Quota) (err error) {
 
 		c.projectIdCache[targetPath] = projectId
 		c.lastProjectId = projectId
+
+		c.logger.Debug().Uint32("project-id", projectId).Msg("setting new project id")
 	}
 
 	c.logger.Debug().
 		Uint32("project-id", projectId).
+		Uint32("last-project-id", c.lastProjectId).
 		Str("target-path", targetPath).
 		Uint64("quota-size", quota.Size).
 		Uint64("quota-inode", quota.INode).
-		Msg("settings quota")
+		Msg("setting quota")
 
 	err = SetProjectQuota(c.backingFsBlockDev, projectId, &quota)
 	if err != nil {
@@ -199,7 +214,9 @@ func GeneratePathToProjectIdMap(root string) (mapping map[string]uint32, err err
 			return
 		}
 
-		mapping[absPath] = projectId
+		if projectId > 0 {
+			mapping[absPath] = projectId
+		}
 	}
 
 	return
