@@ -3,11 +3,17 @@ language: 'go'
 sudo: 'required'
 
 go:
-  - 'master'
+  - '1.10.x'
 
 install:
   - './.travis/setup.sh'
 
 script:
   - 'sudo /home/travis/.gimme/versions/go/bin/go test ./... -v'
+
+after_success:
+  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
+      echo "$DOCKER_PASSWORD" | docker login --username $DOCKER_USERNAME --password-stdin ;
+      sudo make plugin-push ;
+    fi
 
