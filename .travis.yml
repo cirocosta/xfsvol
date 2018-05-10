@@ -12,7 +12,7 @@ script:
   - 'sudo $(go env GOROOT)/bin/go test ./... -v'
 
 after_success:
-  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_BRANCH" == "master" ]]; then
       echo "$DOCKER_PASSWORD" | docker login --username $DOCKER_USERNAME --password-stdin ;
       sudo make plugin-push ;
     fi
