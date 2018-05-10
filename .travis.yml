@@ -9,7 +9,7 @@ install:
   - './.travis/setup.sh'
 
 script:
-  - 'sudo /home/travis/.gimme/versions/go/bin/go test ./... -v'
+  - 'sudo $(go env GOROOT)/bin/go test ./... -v'
 
 after_success:
   - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
