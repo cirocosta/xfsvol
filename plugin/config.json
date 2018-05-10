@@ -6,12 +6,28 @@
     ],
     "Env": [
         {
-            "Description": "Whether debug mode should be enabled",
+            "Description": "Whether debug logs should be enabled",
             "Name": "DEBUG",
             "Settable": [
                 "value"
             ],
-            "Value": "1"
+            "Value": "true"
+        },
+        {
+            "Description": "Directory from /mnt with XFS PQUOTA enabled to create volumes to",
+            "Name": "HOST_MOUNTPOINT",
+            "Settable": [
+                "value"
+            ],
+            "Value": "/mnt/xfs/volumes"
+        },
+        {
+            "Description": "Default size to apply to volumes when no value is specified",
+            "Name": "DEFAULT_SIZE",
+            "Settable": [
+                "value"
+            ],
+            "Value": "512M"
         }
     ],
     "Interface": {
@@ -27,11 +43,11 @@
     },
     "Mounts": [
         {
-            "Destination": "/mnt/xfs/volumes",
+            "Destination": "/mnt",
             "Options": [
                 "bind"
             ],
-            "Source": "/mnt/xfs/volumes",
+            "Source": "/mnt",
             "Type": "bind"
         }
     ],

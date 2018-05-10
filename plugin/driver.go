@@ -12,36 +12,48 @@ import (
 	v "github.com/docker/go-plugins-helpers/volume"
 )
 
-const (
-	HostMountPoint = "/mnt/xfs/volumes"
-	DefaultSize    = "512M"
-)
+type DriverConfig struct {
+	HostMountpoint string
+	DefaultSize    string
+}
 
-type xfsVolDriver struct {
-	logger  zerolog.Logger
-	manager *manager.Manager
+type Driver struct {
+	defaultSize string
+	logger      zerolog.Logger
+	manager     *manager.Manager
 	sync.Mutex
 }
 
-func newNfsVolDriver() (d xfsVolDriver, err error) {
+func NewDriver(cfg DriverConfig) (d Driver, err error) {
+	if cfg.HostMountpoint == "" {
+		err = errors.Errorf("HostMountpoint must be specified")
+		return
+	}
+
+	if cfg.DefaultSize == "" {
+		err = errors.Errorf("DefaultSize must be specified")
+		return
+	}
+
 	m, err := manager.New(manager.Config{
-		Root: HostMountPoint,
+		Root: cfg.HostMountpoint,
 	})
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't initiate fs manager mounting at %s",
-			HostMountPoint)
+			cfg.HostMountpoint)
 		return
 	}
 
 	d.logger = zerolog.New(os.Stdout).With().Str("from", "driver").Logger()
+	d.defaultSize = cfg.DefaultSize
 	d.logger.Info().Msg("driver initiated")
 	d.manager = &m
 
 	return
 }
 
-func (d xfsVolDriver) Create(req *v.CreateRequest) (err error) {
+func (d Driver) Create(req *v.CreateRequest) (err error) {
 	var logger = d.logger.With().
 		Str("log-id", shortid.MustGenerate()).
 		Str("method", "create").
@@ -53,9 +65,9 @@ func (d xfsVolDriver) Create(req *v.CreateRequest) (err error) {
 	size, present := req.Options["size"]
 	if !present {
 		logger.Debug().
-			Str("default", DefaultSize).
+			Str("default", d.defaultSize).
 			Msg("no size opt found, using default")
-		size = DefaultSize
+		size = d.defaultSize
 	}
 
 	sizeInBytes, err := manager.FromHumanSize(size)
@@ -89,7 +101,7 @@ func (d xfsVolDriver) Create(req *v.CreateRequest) (err error) {
 	return
 }
 
-func (d xfsVolDriver) List() (resp *v.ListResponse, err error) {
+func (d Driver) List() (resp *v.ListResponse, err error) {
 	var logger = d.logger.With().
 		Str("log-id", shortid.MustGenerate()).
 		Str("method", "list").
@@ -122,7 +134,7 @@ func (d xfsVolDriver) List() (resp *v.ListResponse, err error) {
 	return
 }
 
-func (d xfsVolDriver) Get(req *v.GetRequest) (resp *v.GetResponse, err error) {
+func (d Driver) Get(req *v.GetRequest) (resp *v.GetResponse, err error) {
 	var logger = d.logger.With().
 		Str("log-id", shortid.MustGenerate()).
 		Str("method", "get").
@@ -160,7 +172,7 @@ func (d xfsVolDriver) Get(req *v.GetRequest) (resp *v.GetResponse, err error) {
 	return
 }
 
-func (d xfsVolDriver) Remove(req *v.RemoveRequest) (err error) {
+func (d Driver) Remove(req *v.RemoveRequest) (err error) {
 	var logger = d.logger.With().
 		Str("log-id", shortid.MustGenerate()).
 		Str("method", "remove").
@@ -186,7 +198,7 @@ func (d xfsVolDriver) Remove(req *v.RemoveRequest) (err error) {
 	return
 }
 
-func (d xfsVolDriver) Path(req *v.PathRequest) (resp *v.PathResponse, err error) {
+func (d Driver) Path(req *v.PathRequest) (resp *v.PathResponse, err error) {
 	var logger = d.logger.With().
 		Str("log-id", shortid.MustGenerate()).
 		Str("method", "path").
@@ -221,7 +233,7 @@ func (d xfsVolDriver) Path(req *v.PathRequest) (resp *v.PathResponse, err error)
 	return
 }
 
-func (d xfsVolDriver) Mount(req *v.MountRequest) (resp *v.MountResponse, err error) {
+func (d Driver) Mount(req *v.MountRequest) (resp *v.MountResponse, err error) {
 	var logger = d.logger.With().
 		Str("log-id", shortid.MustGenerate()).
 		Str("method", "mount").
@@ -257,7 +269,7 @@ func (d xfsVolDriver) Mount(req *v.MountRequest) (resp *v.MountResponse, err err
 	return
 }
 
-func (d xfsVolDriver) Unmount(req *v.UnmountRequest) (err error) {
+func (d Driver) Unmount(req *v.UnmountRequest) (err error) {
 	var logger = d.logger.With().
 		Str("log-id", shortid.MustGenerate()).
 		Str("method", "mount").
@@ -275,7 +287,7 @@ func (d xfsVolDriver) Unmount(req *v.UnmountRequest) (err error) {
 }
 
 // TODO is it global?
-func (d xfsVolDriver) Capabilities() (resp *v.CapabilitiesResponse) {
+func (d Driver) Capabilities() (resp *v.CapabilitiesResponse) {
 	resp = &v.CapabilitiesResponse{
 		Capabilities: v.Capability{
 			Scope: "global",

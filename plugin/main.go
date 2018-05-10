@@ -13,8 +13,11 @@ const (
 )
 
 var (
-	version string = "master-dev"
-	logger         = zerolog.New(os.Stdout)
+	version        string = "master-dev"
+	logger                = zerolog.New(os.Stdout)
+	debug                 = os.Getenv("DEBUG")
+	hostMountpoint        = os.Getenv("HOST_MOUNTPOINT")
+	defaultSize           = os.Getenv("DEFAULT_SIZE")
 )
 
 func main() {
@@ -23,7 +26,14 @@ func main() {
 		Str("socket-address", socketAddress).
 		Msg("initializing plugin")
 
-	d, err := newNfsVolDriver()
+	if debug != "" {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
+	d, err := NewDriver(DriverConfig{
+		HostMountpoint: hostMountpoint,
+		DefaultSize:    defaultSize,
+	})
 	if err != nil {
 		logger.Fatal().
 			Err(err).

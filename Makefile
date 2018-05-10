@@ -57,4 +57,4 @@ plugin-push: rootfs
 	docker plugin push $(PLUGIN_FULL_NAME):$(VERSION)
 
 
-.PHONY: install deps fmt rootfs-image rootfs plugin plugin-logs plugin-exec test
+.PHONY: install test fmt rootfs-image rootfs plugin plugin-push
