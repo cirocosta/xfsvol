@@ -1,5 +1,5 @@
-#ifndef __CONTROL_H
-#define __CONTROL_H
+#ifndef __XFS_H
+#define __XFS_H
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
