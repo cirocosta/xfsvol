@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/cirocosta/xfsvol/xfsvolctl/commands"
+	"github.com/rs/zerolog"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -12,6 +13,7 @@ var (
 )
 
 func main() {
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	app := cli.NewApp()
 	app.Name = "xfsvolctl"
 	app.Version = version

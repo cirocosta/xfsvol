@@ -3,6 +3,7 @@ package commands
 import (
 	"github.com/cirocosta/xfsvol/manager"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -54,6 +55,10 @@ var Create = cli.Command{
 			Name:  "root, r",
 			Usage: "Root of the volume creation (under an xfs filesystem)",
 		},
+		cli.BoolFlag{
+			Name:  "debug",
+			Usage: "Whether debug logs should be displayed",
+		},
 	},
 	Action: createAction,
 }
@@ -64,13 +69,19 @@ func createAction(c *cli.Context) (err error) {
 		size  = c.String("size")
 		root  = c.String("root")
 		inode = c.Uint64("inode")
+		debug = c.Bool("debug")
 
 		sizeInBytes uint64
 	)
 
+	if debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
 	if name == "" || size == "" || root == "" {
 		cli.ShowCommandHelp(c, "create")
-		err = errors.Errorf("Name, Size and Root are required parameters.")
+		err = cli.NewExitError(
+			"Name, size and root are required parameters.", 1)
 		return
 	}
 
@@ -78,16 +89,15 @@ func createAction(c *cli.Context) (err error) {
 		Root: root,
 	})
 	if err != nil {
-		err = errors.Wrapf(err,
-			"Couldn't initiate manager")
+		err = cli.NewExitError(errors.Wrapf(err,
+			"Couldn't initiate manager"), 1)
 		return
 	}
 
 	sizeInBytes, err = manager.FromHumanSize(size)
 	if err != nil {
-		err = errors.Wrapf(err,
-			"Size supplied by user '%s' can't be converted to uint64 bytes",
-			size)
+		err = cli.NewExitError(errors.Wrapf(err,
+			"Size '%s' can't be converted to uint64 bytes", size), 1)
 		return
 	}
 
@@ -97,9 +107,9 @@ func createAction(c *cli.Context) (err error) {
 		INode: inode,
 	})
 	if err != nil {
-		err = errors.Wrapf(err,
+		err = cli.NewExitError(errors.Wrapf(err,
 			"Couldn't create volume name=%s bytes=%d inode=%d",
-			name, sizeInBytes, inode)
+			name, sizeInBytes, inode), 1)
 		return
 	}
 

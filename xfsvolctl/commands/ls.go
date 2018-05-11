@@ -7,6 +7,7 @@ import (
 
 	"github.com/cirocosta/xfsvol/manager"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -41,15 +42,27 @@ var Ls = cli.Command{
 			Name:  "root, r",
 			Usage: "Root of the volume listing",
 		},
+		cli.BoolFlag{
+			Name:  "debug",
+			Usage: "Whether debug logs should be displayed",
+		},
 	},
 	Action: lsAction,
 }
 
 func lsAction(c *cli.Context) (err error) {
-	var root = c.String("root")
+	var (
+		root  = c.String("root")
+		debug = c.Bool("debug")
+	)
+
+	if debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
 	if root == "" {
 		cli.ShowCommandHelp(c, "ls")
-		err = errors.Errorf("All parameters must be set.")
+		err = cli.NewExitError("All parameters must be set", 1)
 		return
 	}
 
@@ -57,16 +70,15 @@ func lsAction(c *cli.Context) (err error) {
 		Root: root,
 	})
 	if err != nil {
-		err = errors.Wrapf(err,
-			"Couldn't initiate manager")
+		err = cli.NewExitError(errors.Wrapf(err,
+			"Couldn't initiate manager"), 1)
 		return
 	}
 
 	vols, err := mgr.List()
 	if err != nil {
-		err = errors.Wrapf(err,
-			"Couldn't list volumes under root %s",
-			root)
+		err = cli.NewExitError(errors.Wrapf(err,
+			"Couldn't list volumes under root %s", root), 1)
 		return
 	}
 
