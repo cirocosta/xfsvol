@@ -11,6 +11,9 @@ import (
 )
 
 var (
+	// NameRegex specifies a regular expression that is
+	// used against every volume that is meant to be created
+	// making sure that no weird names can be specified.
 	NameRegex = regexp.MustCompile(`^[a-zA-Z0-9][\w\-]{1,250}$`)
 
 	ErrInvalidName = errors.Errorf("Invalid name")
@@ -45,6 +48,9 @@ type Volume struct {
 	INode uint64
 }
 
+// New instantiates a new manager that is meant to
+// take care of volume creation, listing, updating
+// and stats retrieval under a given root path.
 func New(cfg Config) (manager Manager, err error) {
 	if cfg.Root == "" {
 		err = errors.Errorf("Root not specified.")
@@ -74,6 +80,8 @@ func New(cfg Config) (manager Manager, err error) {
 	return
 }
 
+// List lists all the volumes that have been created under
+// a given root path that is controlled by this manager.
 func (m Manager) List() (vols []Volume, err error) {
 	files, err := ioutil.ReadDir(m.root)
 	if err != nil {
@@ -107,6 +115,12 @@ func (m Manager) List() (vols []Volume, err error) {
 	return
 }
 
+// Get tries to retrieve a volume by its name (not path).
+//
+// For instance, if the root path that the manager controls is
+// `/mnt/xfs/volumes`, then a volume named `foo` that would live
+// under `/mnt/xfs/volumes/foo` can be retrieved by passing `foo`
+// as the parameter.
 func (m Manager) Get(name string) (vol Volume, found bool, err error) {
 	var absPath string
 
@@ -147,6 +161,8 @@ func (m Manager) Get(name string) (vol Volume, found bool, err error) {
 	return
 }
 
+// Create validates a volume specification and then proceed with
+// creating the volume under the controlled root directory.
 func (m Manager) Create(vol Volume) (absPath string, err error) {
 	if vol.Size == 0 {
 		err = ErrEmptyQuota
@@ -181,6 +197,10 @@ func (m Manager) Create(vol Volume) (absPath string, err error) {
 	return
 }
 
+// Delete tries to delete a volume by its name.
+//
+// ps.: Deleting a volume that doesn't exist is considered
+// an error.
 func (m Manager) Delete(name string) (err error) {
 	if !isValidName(name) {
 		err = ErrInvalidName
@@ -211,6 +231,8 @@ func (m Manager) Delete(name string) (err error) {
 	return
 }
 
+// isValidName verifies whether a given name is considered valid
+// or not based on a constant naming regular expression.
 func isValidName(name string) bool {
 	if name == "" {
 		return false
