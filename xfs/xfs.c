@@ -147,7 +147,7 @@ xfs_create_fs_block_dev(const char* dir, const char* filename)
 
 	errno = 0;
 	if (err == 0) {
-		err = unlinkat(0, full_path, AT_REMOVEDIR);
+		err = unlink(full_path);
 		if (err == -1) {
 			return err;
 		}

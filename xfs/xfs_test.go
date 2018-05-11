@@ -278,6 +278,21 @@ func TestMakeBackingFsDev(t *testing.T) {
 	}
 }
 
+func TestMakeBackingFsDev_succeedsIfAlreadyExists(t *testing.T) {
+	root, err := setupTestFs("", []string{"/dir"})
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	err = xfs.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
+	assert.NoError(t, err)
+
+	err = xfs.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
+	assert.NoError(t, err)
+
+	err = xfs.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
+	assert.NoError(t, err)
+}
+
 func TestSetProjectQuota_failsIfBlockDeviceDoesntExist(t *testing.T) {
 	var (
 		fs                           = []string{"/dir"}
