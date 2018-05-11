@@ -140,6 +140,19 @@ xfs_create_fs_block_dev(const char* dir, const char* filename)
 	strcat(full_path, "/");
 	strcat(full_path, filename);
 
+	err = access(full_path, F_OK);
+	if (err == -1 && errno != ENOENT) {
+		return err;
+	}
+
+	errno = 0;
+	if (err == 0) {
+		err = unlinkat(0, full_path, AT_REMOVEDIR);
+		if (err == -1) {
+			return err;
+		}
+	}
+
 	err = mknod(full_path, S_IFBLK | 0600, stat_buf.st_dev);
 	if (err == -1) {
 		return err;
