@@ -16,7 +16,7 @@ import (
 // blockDeviceName corresponds to the name of the
 // special file that is meant to be used by xfs to
 // keep track of the project quotas.
-const blockDeviceName = "backingFsBlockDev"
+const blockDeviceName = "__control-device"
 
 // Control gives the context to be used by storage driver
 // who wants to apply project quotas to container dirs.
@@ -47,6 +47,8 @@ type Control struct {
 // ControlConfig specifies the configuration to be used by
 // the controller that will hold the quota allocation state.
 type ControlConfig struct {
+	// StartingProjectId specifies the minimum projectid that
+	// should be used in the projectid allocation.
 	StartingProjectId *uint32
 
 	// BasePath is the base in which all the directories

@@ -18,8 +18,10 @@ xfs_set_project_quota(const char*  fs_block_dev,
 		  FS_DQ_BHARD | FS_DQ_BSOFT | FS_DQ_ISOFT | FS_DQ_IHARD,
 	};
 
-	err =
-	  quotactl(Q_XSETPQLIM, fs_block_dev, project_id, (void*)&disk_quota);
+	err = quotactl(QCMD(Q_XSETQLIM, PRJQUOTA),
+	               fs_block_dev,
+	               project_id,
+	               (void*)&disk_quota);
 	if (err == -1) {
 		return -1;
 	}
@@ -35,8 +37,10 @@ xfs_get_project_quota(const char*  fs_block_dev,
 	int             err        = 0;
 	fs_disk_quota_t disk_quota = { 0 };
 
-	err =
-	  quotactl(Q_XGETPQUOTA, fs_block_dev, project_id, (void*)&disk_quota);
+	err = quotactl(QCMD(Q_XGETQUOTA, PRJQUOTA),
+	               fs_block_dev,
+	               project_id,
+	               (void*)&disk_quota);
 	if (err == -1) {
 		return -1;
 	}
