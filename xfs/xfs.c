@@ -52,6 +52,28 @@ xfs_get_project_quota(const char*  fs_block_dev,
 }
 
 int
+xfs_get_project_stats(const char* fs_block_dev,
+                      __u32       project_id,
+                      xfs_stat_t* stat)
+{
+	int                   err       = 0;
+	struct fs_quota_statv disk_stat = { 0 };
+
+	err = quotactl(QCMD(Q_XGETQSTATV, PRJQUOTA),
+	               fs_block_dev,
+	               project_id,
+	               (void*)&disk_stat);
+	if (err == -1) {
+		return -1;
+	}
+
+	stat->inodes = disk_stat.qs_pquota.qfs_ino;
+	stat->size   = disk_stat.qs_pquota.qfs_nblks * 512;
+
+	return 0;
+}
+
+int
 xfs_get_project_id(const char* dir)
 {
 	int            err = 0;

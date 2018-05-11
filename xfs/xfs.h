@@ -12,7 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <linux/dqblk_xfs.h>
+#include <xfs/xqm.h>
 #include <linux/fs.h>
 #include <linux/quota.h>
 
@@ -67,6 +67,12 @@ typedef struct xfs_quota {
 } xfs_quota_t;
 
 /**
+ * Provides information regarding the usage
+ * of blocks and inodes under a given projectid.
+ */
+typedef xfs_quota_t xfs_stat_t;
+
+/**
  * Sets the project quota for a given path as
  * specified in the arguments provided via the
  * argument `cfg`.
@@ -92,6 +98,16 @@ int
 xfs_get_project_quota(const char*  fs_block_dev,
                       __u32        project_id,
                       xfs_quota_t* quota);
+
+/**
+ * Retrieves statistics regarding a specific projectid.
+ *
+ * Returns -1 in case of errors.
+ */
+int
+xfs_get_project_stats(const char* fs_block_dev,
+                      __u32       project_id,
+                      xfs_stat_t* stat);
 
 /**
  * Sets the project_id of a given directory.
