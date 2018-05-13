@@ -13,9 +13,9 @@
 set -o errexit
 
 main() {
-	install_dependencies
-	create_xfs_loopback_device
-	create_testing_directory
+  install_dependencies
+  create_xfs_loopback_device
+  create_testing_directory
 }
 
 install_dependencies() {
@@ -23,48 +23,48 @@ install_dependencies() {
   Installing base dependencies using 'apt'.
   "
 
-	sudo apt update -y
+  sudo apt update -y
   sudo apt install -y \
     xfsprogs \
     xfslibs-dev \
     tree
 
-	echo "SUCCESS:
+  echo "SUCCESS:
   Dependencies installed.
   "
 }
 
 create_xfs_loopback_device() {
-	echo "INFO:
+  echo "INFO:
   Creating XFS loopback device
   "
 
-	sudo dd if=/dev/zero of=/xfs.1G bs=1M count=1024
-	sudo losetup /dev/loop0 /xfs.1G
-	sudo mkfs -t xfs /dev/loop0
-	sudo mkdir -p /mnt/xfs
-	sudo mount /dev/loop0 /mnt/xfs -o pquota
+  sudo dd if=/dev/zero of=/xfs.1G bs=1M count=1024
+  sudo losetup /dev/loop0 /xfs.1G
+  sudo mkfs -t xfs /dev/loop0
+  sudo mkdir -p /mnt/xfs
+  sudo mount /dev/loop0 /mnt/xfs -o pquota
 
-	echo "SUCCESS:
+  echo "SUCCESS:
   Device created.
   "
 
-	lsblk
+  lsblk
 }
 
 create_testing_directory() {
-	echo "INFO:
+  echo "INFO:
   Creating testing directory '/mnt/xfs/tmp'.
   "
 
-	sudo mkdir -p /mnt/xfs/tmp
-	sudo chown -R $(whoami) /mnt/xfs/tmp
+  sudo mkdir -p /mnt/xfs/tmp
+  sudo chown -R $(whoami) /mnt/xfs/tmp
 
-	echo "SUCCESS:
+  echo "SUCCESS:
   Testing directory created
   "
 
-	tree /mnt
+  tree /mnt
 }
 
 main
