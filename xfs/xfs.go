@@ -11,13 +11,19 @@ import (
 
 // Quota defines the limit params to be applied or that
 // are already set to a project:
-// -	Size:	number of blk sizes that can be
-//		commited
-// -	INode:	maximum number of INodes that
-//		can be created
+// -	Size:		number of blk sizes that can be
+//			commited
+// -	INode:		maximum number of INodes that
+//			can be created
+// -	UsedSize:	number of blk sizes that can be
+//			commited
+// -	UsedINode:	maximum number of INodes that
+//			can be created
 type Quota struct {
-	Size  uint64
-	INode uint64
+	Size      uint64
+	INode     uint64
+	UsedSize  uint64
+	UsedInode uint64
 }
 
 // SetProjectQuota sets quota settings associated with a given
@@ -78,6 +84,8 @@ func GetProjectQuota(blockDevice string, projectId uint32) (q *Quota, err error)
 	q = new(Quota)
 	q.INode = uint64(quota.inodes)
 	q.Size = uint64(quota.size)
+	q.UsedInode = uint64(quota.used_inodes)
+	q.UsedSize = uint64(quota.used_size)
 
 	return
 }

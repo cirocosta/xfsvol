@@ -12,15 +12,27 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <xfs/xqm.h>
 #include <linux/fs.h>
 #include <linux/quota.h>
+#include <xfs/xqm.h>
 
 #include <sys/ioctl.h>
 #include <sys/quota.h>
 #include <sys/stat.h>
 
 /**
+ * The size of a disk block as defined by the quota api.
+ */
+#define BASIC_BLOCK_SIZE 512
+
+/**
+ * The following definitions are mostly for compatibility
+ * with older kernels.
+ *
+ * This is meant to make it work at least with 4.4+.
+ *
+ * For some definitions, check out the kernel tree.
+ *
  * From linux/fs/xfs/libxfs/xfs_quota_defs.h
  * (https://github.com/torvalds/linux/blob/master/fs/xfs/libxfs/xfs_quota_defs.h#L37):
  *
@@ -64,13 +76,9 @@ struct fsxattr {
 typedef struct xfs_quota {
 	__u64 size;
 	__u64 inodes;
+	__u64 used_size;
+	__u64 used_inodes;
 } xfs_quota_t;
-
-/**
- * Provides information regarding the usage
- * of blocks and inodes under a given projectid.
- */
-typedef xfs_quota_t xfs_stat_t;
 
 /**
  * Sets the project quota for a given path as
@@ -98,16 +106,6 @@ int
 xfs_get_project_quota(const char*  fs_block_dev,
                       __u32        project_id,
                       xfs_quota_t* quota);
-
-/**
- * Retrieves statistics regarding a specific projectid.
- *
- * Returns -1 in case of errors.
- */
-int
-xfs_get_project_stats(const char* fs_block_dev,
-                      __u32       project_id,
-                      xfs_stat_t* stat);
 
 /**
  * Sets the project_id of a given directory.

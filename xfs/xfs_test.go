@@ -8,6 +8,8 @@ import (
 
 	"github.com/cirocosta/xfsvol/xfs"
 	"github.com/stretchr/testify/assert"
+
+	utils "github.com/cirocosta/xfsvol/test_utils"
 )
 
 const (
@@ -317,7 +319,7 @@ func TestSetProjectQuota_succeeds(t *testing.T) {
 	var (
 		fs                   = []string{"/dir"}
 		projectId     uint32 = 999
-		expectedQuota        = &xfs.Quota{1 << 20, 1 << 20}
+		expectedQuota        = &xfs.Quota{Size: 1 << 20, INode: 1 << 20}
 		actualQuota   *xfs.Quota
 		blockDevice   string
 	)
@@ -341,4 +343,47 @@ func TestSetProjectQuota_succeeds(t *testing.T) {
 
 	assert.Equal(t, expectedQuota.Size, actualQuota.Size)
 	assert.Equal(t, expectedQuota.INode, actualQuota.INode)
+}
+
+func TestGetProjectStats(t *testing.T) {
+	root, err := setupTestFs(xfsMountPath, []string{"/dir"})
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	var (
+		blockDevice        = filepath.Join(root, "block-device")
+		directory          = filepath.Join(root, "/dir")
+		file               = filepath.Join(directory, "file")
+		projectId   uint32 = 333
+	)
+
+	err = xfs.MakeBackingFsDev(root, "block-device")
+	assert.NoError(t, err)
+
+	err = xfs.SetProjectId(directory, projectId)
+	assert.NoError(t, err)
+
+	err = xfs.SetProjectQuota(blockDevice, projectId, &xfs.Quota{})
+	assert.NoError(t, err)
+
+	quota1, err := xfs.GetProjectQuota(blockDevice, projectId)
+	assert.NoError(t, err)
+
+	err = utils.CreateFiles(directory, 100)
+	assert.NoError(t, err)
+
+	file1M, err := os.Create(file)
+	assert.NoError(t, err)
+
+	err = utils.WriteBytes(file1M, 'c', 1<<20)
+	assert.NoError(t, err)
+
+	file1M.Sync()
+
+	quota2, err := xfs.GetProjectQuota(blockDevice, projectId)
+	assert.NoError(t, err)
+
+	assert.Equal(t, uint64(101), quota2.UsedInode-quota1.UsedInode)
+	assert.True(t, quota1.UsedSize < (1<<15))
+	assert.True(t, quota2.UsedSize > (1<<20))
 }

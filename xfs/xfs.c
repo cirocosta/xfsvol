@@ -10,8 +10,8 @@ xfs_set_project_quota(const char*  fs_block_dev,
 		.d_version       = FS_DQUOT_VERSION,
 		.d_id            = project_id,
 		.d_flags         = XFS_PROJ_QUOTA,
-		.d_blk_hardlimit = quota->size / 512,
-		.d_blk_softlimit = quota->size / 512,
+		.d_blk_hardlimit = quota->size / BASIC_BLOCK_SIZE,
+		.d_blk_softlimit = quota->size / BASIC_BLOCK_SIZE,
 		.d_ino_hardlimit = quota->inodes,
 		.d_ino_softlimit = quota->inodes,
 		.d_fieldmask =
@@ -45,30 +45,10 @@ xfs_get_project_quota(const char*  fs_block_dev,
 		return -1;
 	}
 
-	quota->size   = disk_quota.d_blk_hardlimit * 512;
-	quota->inodes = disk_quota.d_ino_hardlimit;
-
-	return 0;
-}
-
-int
-xfs_get_project_stats(const char* fs_block_dev,
-                      __u32       project_id,
-                      xfs_stat_t* stat)
-{
-	int                   err       = 0;
-	struct fs_quota_statv disk_stat = { 0 };
-
-	err = quotactl(QCMD(Q_XGETQSTATV, PRJQUOTA),
-	               fs_block_dev,
-	               project_id,
-	               (void*)&disk_stat);
-	if (err == -1) {
-		return -1;
-	}
-
-	stat->inodes = disk_stat.qs_pquota.qfs_ino;
-	stat->size   = disk_stat.qs_pquota.qfs_nblks * 512;
+	quota->size        = disk_quota.d_blk_hardlimit * BASIC_BLOCK_SIZE;
+	quota->inodes      = disk_quota.d_ino_hardlimit;
+	quota->used_size   = disk_quota.d_bcount * BASIC_BLOCK_SIZE;
+	quota->used_inodes = disk_quota.d_icount;
 
 	return 0;
 }
