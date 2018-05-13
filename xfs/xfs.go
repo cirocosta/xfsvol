@@ -10,24 +10,33 @@ import (
 )
 
 // Quota defines the limit params to be applied or that
-// are already set to a project:
-// -	Size:		number of blk sizes that can be
-//			commited
-// -	INode:		maximum number of INodes that
-//			can be created
-// -	UsedSize:	number of blk sizes that can be
-//			commited
-// -	UsedINode:	maximum number of INodes that
-//			can be created
+// are already set to a project.
+//
+// Fields named `Used` are meant to `Get` operations only,
+// to display how much of the quotah as been used so far.
 type Quota struct {
-	Size      uint64
-	INode     uint64
-	UsedSize  uint64
+	// Size represents total size that can be commited
+	// to a tree of directories under this quota.
+	Size uint64
+
+	// INode tells the maximum number of INodes that can be created;
+	INode uint64
+
+	// UsedSize is the disk size that has been used under quota;
+	UsedSize uint64
+
+	// UsedINode is the number of INodes that used so far.
 	UsedInode uint64
 }
 
 // SetProjectQuota sets quota settings associated with a given
 // projectId controlled by a given block device.
+//
+// The values that are not prefixed with `Used` of the supplied  `Quota`
+// pointer are taken into account.
+//
+// 0 values are meant to indicate that there's no quota (i.e, no
+// limits).
 func SetProjectQuota(blockDevice string, projectId uint32, q *Quota) (err error) {
 	if blockDevice == "" {
 		err = errors.Errorf("blockDevice must be specified")
@@ -59,6 +68,9 @@ func SetProjectQuota(blockDevice string, projectId uint32, q *Quota) (err error)
 
 // GetProjectQuota retrieves the quota settings associated
 // with a project-id controlled by a given block device.
+//
+// The values prefixed with `Used` indicates how much has been
+// already used (statistics).
 func GetProjectQuota(blockDevice string, projectId uint32) (q *Quota, err error) {
 	if blockDevice == "" {
 		err = errors.Errorf("blockDevice must be specified")
