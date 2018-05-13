@@ -41,15 +41,6 @@
  */
 
 #ifndef FS_XFLAG_PROJINHERIT
-
-struct fsxattr {
-	__u32         fsx_xflags;
-	__u32         fsx_extsize;
-	__u32         fsx_nextents;
-	__u32         fsx_projid;
-	unsigned char fsx_pad[12];
-};
-
 #define FS_XFLAG_PROJINHERIT 0x00000200
 #endif
 
