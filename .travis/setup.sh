@@ -15,7 +15,10 @@ set -o errexit
 main() {
   install_dependencies
   create_xfs_loopback_device
+  create_xfs_loopback_device_without_project_quota
   create_testing_directory
+
+  lsblk
 }
 
 install_dependencies() {
@@ -39,8 +42,8 @@ create_xfs_loopback_device() {
   Creating XFS loopback device
   "
 
-  sudo dd if=/dev/zero of=/xfs.1G bs=1M count=1024
-  sudo losetup /dev/loop0 /xfs.1G
+  sudo dd if=/dev/zero of=/xfs.512M.1 bs=1M count=512
+  sudo losetup /dev/loop0 /xfs.512M.1
   sudo mkfs -t xfs /dev/loop0
   sudo mkdir -p /mnt/xfs
   sudo mount /dev/loop0 /mnt/xfs -o pquota
@@ -48,8 +51,23 @@ create_xfs_loopback_device() {
   echo "SUCCESS:
   Device created.
   "
+}
 
-  lsblk
+create_xfs_loopback_device_without_project_quota() {
+  echo "INFO:
+  Creating XFS loopback device without project
+  quota support.
+  "
+
+  sudo dd if=/dev/zero of=/xfs.512M.2 bs=1M count=512
+  sudo losetup /dev/loop1 /xfs.512M.2
+  sudo mkfs -t xfs /dev/loop1
+  sudo mkdir -p /mnt/xfs-without-quota
+  sudo mount /dev/loop1 /mnt/xfs-without-quota -o noquota
+
+  echo "SUCCESS:
+  Device created.
+  "
 }
 
 create_testing_directory() {

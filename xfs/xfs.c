@@ -1,6 +1,34 @@
 #include "./xfs.h"
 
 int
+xfs_is_quota_enabled(const char* fs_block_dev)
+{
+	int                   ret   = 0;
+	struct fs_quota_statv statv = {.qs_version = FS_QSTATV_VERSION1 };
+	enum { ERR         = -1,
+	       ENABLED     = 0,
+	       NOT_ENABLED = 1,
+	};
+
+	ret = quotactl(
+	  QCMD(Q_XGETQSTATV, PRJQUOTA), fs_block_dev, 0, (void*)&statv);
+	if (ret == -1) {
+		if (errno == ENOSYS) {
+			errno = 0;
+			return NOT_ENABLED;
+		}
+
+		return ERR;
+	}
+
+	if (statv.qs_flags & (FS_QUOTA_PDQ_ACCT | FS_QUOTA_PDQ_ENFD)) {
+		return ENABLED;
+	}
+
+	return NOT_ENABLED;
+}
+
+int
 xfs_set_project_quota(const char*  fs_block_dev,
                       __u32        project_id,
                       xfs_quota_t* quota)

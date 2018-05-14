@@ -66,6 +66,33 @@ func SetProjectQuota(blockDevice string, projectId uint32, q *Quota) (err error)
 	return
 }
 
+// IsQuotaEnabled checks whether a given filesystem mount
+// indicated by a block device has project quota accounting
+// and enforcement ON.
+func IsQuotaEnabled(blockDevice string) (isEnabled bool, err error) {
+	if blockDevice == "" {
+		err = errors.Errorf("blockDevice must be specified")
+		return
+	}
+
+	var blockDeviceString = C.CString(blockDevice)
+	defer C.free(unsafe.Pointer(blockDeviceString))
+
+	ret, err := C.xfs_is_quota_enabled(blockDeviceString)
+	switch ret {
+	case -1:
+		err = errors.Wrapf(err,
+			"failed to check whether quota is enabled for dev %s",
+			blockDevice)
+		return
+	case 0:
+		isEnabled = true
+	default:
+	}
+
+	return
+}
+
 // GetProjectQuota retrieves the quota settings associated
 // with a project-id controlled by a given block device.
 //

@@ -12,9 +12,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <linux/dqblk_xfs.h>
 #include <linux/fs.h>
 #include <linux/quota.h>
-#include <xfs/xqm.h>
+#include <xfs/xfs.h>
 
 #include <sys/ioctl.h>
 #include <sys/quota.h>
@@ -114,6 +115,25 @@ xfs_set_project_id(const char* dir, __u32 project_id);
  */
 int
 xfs_get_project_id(const char* dir);
+
+/**
+ * Verifies whether the filesystem has been mounted
+ * with quota capabilities.
+ *
+ * To do so, it makes use of the XGETQSTATV quotactl
+ * call and then checks the flags to see if the following
+ * are set:
+ *
+ * - FS_QUOTA_PDQ_ACCT  project quota accounting
+ * - FS_QUOTA_PDQ_ENFD  project quota limits enforcement
+ *
+ * Returns:
+ *      - -1 in case of unexpected errors;
+ *      - 0 if quota is enabled;
+ *      - 1 if not enabled.
+ */
+int
+xfs_is_quota_enabled(const char* fs_block_dev);
 
 /**
  * Creates the filesystem block device to control

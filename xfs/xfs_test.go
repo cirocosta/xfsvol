@@ -13,7 +13,21 @@ import (
 )
 
 const (
+	// xfsMountPath corresponds to the project-quota-enabled
+	// mount path that must be set up before running the
+	// tests.
+	//
+	// Check `.travis/setup.sh` for some more information on
+	// how to have this properly done.
 	xfsMountPath = "/mnt/xfs"
+
+	// xfsMountPathWithoutQuota specifies the test mount path
+	// of a device that has xfs properly set up but without
+	// project quota support.
+	//
+	// Check `.travis/setup.sh` for some more information on
+	// how to have this properly done.
+	xfsMountPathWithoutQuota = "/mnt/xfs-without-quota"
 )
 
 // setupTestFs takes a filesystem description as
@@ -386,4 +400,47 @@ func TestGetProjectStats(t *testing.T) {
 	assert.Equal(t, uint64(101), quota2.UsedInode-quota1.UsedInode)
 	assert.True(t, quota1.UsedSize < (1<<15))
 	assert.True(t, quota2.UsedSize > (1<<20))
+}
+
+func TestIsQuotaEnabled_failsIfBlockDeviceDoesntExist(t *testing.T) {
+	_, err := xfs.IsQuotaEnabled("/inexistent-block/_device")
+	assert.Error(t, err)
+}
+
+func TestIsQuotaEnabled_notEnabledIfNotXfs(t *testing.T) {
+	root, err := setupTestFs("", []string{"/"})
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	err = xfs.MakeBackingFsDev(root, "block-device")
+	assert.NoError(t, err)
+
+	_, err = xfs.IsQuotaEnabled(filepath.Join(root, "block-device"))
+	assert.NoError(t, err)
+}
+
+func TestIsQuotaEnabled_notEnabledIfNoProjectQuotaSet(t *testing.T) {
+	root, err := setupTestFs(xfsMountPathWithoutQuota, []string{"/"})
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	err = xfs.MakeBackingFsDev(root, "block-device")
+	assert.NoError(t, err)
+
+	isEnabled, err := xfs.IsQuotaEnabled(filepath.Join(root, "block-device"))
+	assert.NoError(t, err)
+	assert.False(t, isEnabled)
+}
+
+func TestIsQuotaEnabled(t *testing.T) {
+	root, err := setupTestFs(xfsMountPath, []string{"/"})
+	assert.NoError(t, err)
+	defer os.RemoveAll(root)
+
+	err = xfs.MakeBackingFsDev(root, "block-device")
+	assert.NoError(t, err)
+
+	isEnabled, err := xfs.IsQuotaEnabled(filepath.Join(root, "block-device"))
+	assert.NoError(t, err)
+	assert.True(t, isEnabled)
 }
