@@ -13,7 +13,7 @@ xfs_is_quota_enabled(const char* fs_block_dev)
 	ret = quotactl(
 	  QCMD(Q_XGETQSTATV, PRJQUOTA), fs_block_dev, 0, (void*)&statv);
 	if (ret == -1) {
-		if (errno == ENOSYS) {
+		if (errno == ENOSYS || errno == EINVAL) {
 			errno = 0;
 			return NOT_ENABLED;
 		}
