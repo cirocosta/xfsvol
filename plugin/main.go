@@ -14,8 +14,8 @@ const (
 )
 
 type config struct {
-	HostMountpoint string `arg:"env:HOST_MOUNTPOINT,help:xfs-mounted filesystem to create volumes"`
-	DefaultSize    string `arg:"env:DEFAULT_SIZE,help:default size to use as quota"`
+	HostMountpoint string `arg:"--host-mountpoint,env:HOST_MOUNTPOINT,help:xfs-mounted filesystem to create volumes"`
+	DefaultSize    string `arg:"--default-size,env:DEFAULT_SIZE,help:default size to use as quota"`
 	Debug          bool   `arg:"env:DEBUG,help:enable debug logs"`
 }
 
