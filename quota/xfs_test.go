@@ -1,4 +1,4 @@
-package xfs_test
+package quota_test
 
 import (
 	"io/ioutil"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cirocosta/xfsvol/xfs"
+	"github.com/cirocosta/xfsvol/quota"
 	"github.com/stretchr/testify/assert"
 
 	utils "github.com/cirocosta/xfsvol/test_utils"
@@ -120,7 +120,7 @@ func TestGetProjectId(t *testing.T) {
 			assert.NoError(t, err)
 			defer os.RemoveAll(root)
 
-			projectId, err = xfs.GetProjectId(filepath.Join(root, tc.target))
+			projectId, err = quota.GetProjectId(filepath.Join(root, tc.target))
 			if tc.shouldError {
 				assert.Error(t, err)
 				return
@@ -187,14 +187,14 @@ func TestSetProjectId(t *testing.T) {
 			assert.NoError(t, err)
 			defer os.RemoveAll(root)
 
-			err = xfs.SetProjectId(filepath.Join(root, tc.target), tc.projectId)
+			err = quota.SetProjectId(filepath.Join(root, tc.target), tc.projectId)
 			if tc.shouldError {
 				assert.Error(t, err)
 				return
 			}
 			assert.NoError(t, err)
 
-			projectId, err = xfs.GetProjectId(filepath.Join(root, tc.target))
+			projectId, err = quota.GetProjectId(filepath.Join(root, tc.target))
 			assert.NoError(t, err)
 			assert.Equal(t, tc.projectId, projectId)
 		})
@@ -216,17 +216,17 @@ func TestSetProjectId_childrenHaveProjectIdSet(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(root)
 
-	err = xfs.SetProjectId(filepath.Join(root, "/dir"), desiredProjectId)
+	err = quota.SetProjectId(filepath.Join(root, "/dir"), desiredProjectId)
 	assert.NoError(t, err)
 
 	err = os.MkdirAll(filepath.Join(root, "/dir", "/child"), 0755)
 	assert.NoError(t, err)
 
-	projectId, err = xfs.GetProjectId(filepath.Join(root, "/dir"))
+	projectId, err = quota.GetProjectId(filepath.Join(root, "/dir"))
 	assert.NoError(t, err)
 	assert.Equal(t, desiredProjectId, projectId)
 
-	projectId, err = xfs.GetProjectId(filepath.Join(root, "/dir", "/child"))
+	projectId, err = quota.GetProjectId(filepath.Join(root, "/dir", "/child"))
 	assert.NoError(t, err)
 	assert.Equal(t, desiredProjectId, projectId)
 }
@@ -286,7 +286,7 @@ func TestMakeBackingFsDev(t *testing.T) {
 			assert.NoError(t, err)
 			defer os.RemoveAll(root)
 
-			err = xfs.MakeBackingFsDev(filepath.Join(root, tc.root), tc.file)
+			err = quota.MakeBackingFsDev(filepath.Join(root, tc.root), tc.file)
 			if tc.shouldFail {
 				assert.Error(t, err)
 			}
@@ -299,13 +299,13 @@ func TestMakeBackingFsDev_succeedsIfAlreadyExists(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(root)
 
-	err = xfs.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
+	err = quota.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
 	assert.NoError(t, err)
 
-	err = xfs.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
+	err = quota.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
 	assert.NoError(t, err)
 
-	err = xfs.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
+	err = quota.MakeBackingFsDev(filepath.Join(root, "/dir"), "device")
 	assert.NoError(t, err)
 }
 
@@ -322,7 +322,7 @@ func TestSetProjectQuota_failsIfBlockDeviceDoesntExist(t *testing.T) {
 
 	inexistentBlockDevice = filepath.Join(root, "inexistent-device")
 
-	err = xfs.SetProjectQuota(inexistentBlockDevice, inexistentProjectId, &xfs.Quota{
+	err = quota.SetProjectQuota(inexistentBlockDevice, inexistentProjectId, &quota.Quota{
 		Size:  123,
 		INode: 123,
 	})
@@ -333,8 +333,8 @@ func TestSetProjectQuota_succeeds(t *testing.T) {
 	var (
 		fs                   = []string{"/dir"}
 		projectId     uint32 = 999
-		expectedQuota        = &xfs.Quota{Size: 1 << 20, INode: 1 << 20}
-		actualQuota   *xfs.Quota
+		expectedQuota        = &quota.Quota{Size: 1 << 20, INode: 1 << 20}
+		actualQuota   *quota.Quota
 		blockDevice   string
 	)
 
@@ -343,16 +343,16 @@ func TestSetProjectQuota_succeeds(t *testing.T) {
 	defer os.RemoveAll(root)
 
 	blockDevice = filepath.Join(root, "block-device")
-	err = xfs.MakeBackingFsDev(root, "block-device")
+	err = quota.MakeBackingFsDev(root, "block-device")
 	assert.NoError(t, err)
 
-	err = xfs.SetProjectId(filepath.Join(root, "dir"), projectId)
+	err = quota.SetProjectId(filepath.Join(root, "dir"), projectId)
 	assert.NoError(t, err)
 
-	err = xfs.SetProjectQuota(blockDevice, projectId, expectedQuota)
+	err = quota.SetProjectQuota(blockDevice, projectId, expectedQuota)
 	assert.NoError(t, err)
 
-	actualQuota, err = xfs.GetProjectQuota(blockDevice, projectId)
+	actualQuota, err = quota.GetProjectQuota(blockDevice, projectId)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedQuota.Size, actualQuota.Size)
@@ -371,16 +371,16 @@ func TestGetProjectStats(t *testing.T) {
 		projectId   uint32 = 333
 	)
 
-	err = xfs.MakeBackingFsDev(root, "block-device")
+	err = quota.MakeBackingFsDev(root, "block-device")
 	assert.NoError(t, err)
 
-	err = xfs.SetProjectId(directory, projectId)
+	err = quota.SetProjectId(directory, projectId)
 	assert.NoError(t, err)
 
-	err = xfs.SetProjectQuota(blockDevice, projectId, &xfs.Quota{})
+	err = quota.SetProjectQuota(blockDevice, projectId, &quota.Quota{})
 	assert.NoError(t, err)
 
-	quota1, err := xfs.GetProjectQuota(blockDevice, projectId)
+	quota1, err := quota.GetProjectQuota(blockDevice, projectId)
 	assert.NoError(t, err)
 
 	err = utils.CreateFiles(directory, 100)
@@ -394,7 +394,7 @@ func TestGetProjectStats(t *testing.T) {
 
 	file1M.Sync()
 
-	quota2, err := xfs.GetProjectQuota(blockDevice, projectId)
+	quota2, err := quota.GetProjectQuota(blockDevice, projectId)
 	assert.NoError(t, err)
 
 	assert.Equal(t, uint64(101), quota2.UsedInode-quota1.UsedInode)
@@ -403,7 +403,7 @@ func TestGetProjectStats(t *testing.T) {
 }
 
 func TestIsQuotaEnabled_failsIfBlockDeviceDoesntExist(t *testing.T) {
-	_, err := xfs.IsQuotaEnabled("/inexistent-block/_device")
+	_, err := quota.IsQuotaEnabled("/inexistent-block/_device")
 	assert.Error(t, err)
 }
 
@@ -412,10 +412,10 @@ func TestIsQuotaEnabled_notEnabledIfNotXfs(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(root)
 
-	err = xfs.MakeBackingFsDev(root, "block-device")
+	err = quota.MakeBackingFsDev(root, "block-device")
 	assert.NoError(t, err)
 
-	_, err = xfs.IsQuotaEnabled(filepath.Join(root, "block-device"))
+	_, err = quota.IsQuotaEnabled(filepath.Join(root, "block-device"))
 	assert.NoError(t, err)
 }
 
@@ -424,10 +424,10 @@ func TestIsQuotaEnabled_notEnabledIfNoProjectQuotaSet(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(root)
 
-	err = xfs.MakeBackingFsDev(root, "block-device")
+	err = quota.MakeBackingFsDev(root, "block-device")
 	assert.NoError(t, err)
 
-	isEnabled, err := xfs.IsQuotaEnabled(filepath.Join(root, "block-device"))
+	isEnabled, err := quota.IsQuotaEnabled(filepath.Join(root, "block-device"))
 	assert.NoError(t, err)
 	assert.False(t, isEnabled)
 }
@@ -437,10 +437,10 @@ func TestIsQuotaEnabled(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(root)
 
-	err = xfs.MakeBackingFsDev(root, "block-device")
+	err = quota.MakeBackingFsDev(root, "block-device")
 	assert.NoError(t, err)
 
-	isEnabled, err := xfs.IsQuotaEnabled(filepath.Join(root, "block-device"))
+	isEnabled, err := quota.IsQuotaEnabled(filepath.Join(root, "block-device"))
 	assert.NoError(t, err)
 	assert.True(t, isEnabled)
 }

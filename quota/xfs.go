@@ -1,4 +1,4 @@
-package xfs
+package quota
 
 // #include "./xfs.h"
 import "C"

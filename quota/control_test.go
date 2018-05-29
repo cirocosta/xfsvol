@@ -1,4 +1,4 @@
-package xfs_test
+package quota_test
 
 import (
 	"io/ioutil"
@@ -6,7 +6,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/cirocosta/xfsvol/xfs"
+	"github.com/cirocosta/xfsvol/quota"
 	"github.com/stretchr/testify/assert"
 
 	utils "github.com/cirocosta/xfsvol/test_utils"
@@ -19,7 +19,7 @@ func TestControl_succeedsIfXFSBasedDirectory(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	_, err = xfs.NewControl(xfs.ControlConfig{
+	_, err = quota.NewControl(quota.ControlConfig{
 		BasePath: dir,
 	})
 	assert.NoError(t, err)
@@ -30,7 +30,7 @@ func TestControl_createsBackingFsBlockDev(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	ctl, err := xfs.NewControl(xfs.ControlConfig{
+	ctl, err := quota.NewControl(quota.ControlConfig{
 		BasePath: dir,
 	})
 	assert.NoError(t, err)
@@ -51,12 +51,12 @@ func TestControl_quotaAssignmentFailsToIfDirectoryOutsideTree(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	ctl, err := xfs.NewControl(xfs.ControlConfig{
+	ctl, err := quota.NewControl(quota.ControlConfig{
 		BasePath: dir,
 	})
 	assert.NoError(t, err)
 
-	err = ctl.SetQuota(dirOutside, xfs.Quota{
+	err = ctl.SetQuota(dirOutside, quota.Quota{
 		Size: 10 * (1 << 20),
 	})
 	assert.Error(t, err)
@@ -69,12 +69,12 @@ func TestControl_failsToAssignQuotaToInexistentDirectoryWithinTree(t *testing.T)
 
 	dirInside := path.Join(dir, "abc")
 
-	ctl, err := xfs.NewControl(xfs.ControlConfig{
+	ctl, err := quota.NewControl(quota.ControlConfig{
 		BasePath: dir,
 	})
 	assert.NoError(t, err)
 
-	err = ctl.SetQuota(dirInside, xfs.Quota{
+	err = ctl.SetQuota(dirInside, quota.Quota{
 		Size: 10 * (1 << 20),
 	})
 	assert.Error(t, err)
@@ -89,12 +89,12 @@ func TestControl_succeedsToAssignQuotaToDirectoryWithinTree(t *testing.T) {
 	err = os.MkdirAll(dirInside, 0755)
 	assert.NoError(t, err)
 
-	ctl, err := xfs.NewControl(xfs.ControlConfig{
+	ctl, err := quota.NewControl(quota.ControlConfig{
 		BasePath: dir,
 	})
 	assert.NoError(t, err)
 
-	err = ctl.SetQuota(dirInside, xfs.Quota{
+	err = ctl.SetQuota(dirInside, quota.Quota{
 		Size: 10 * (1 << 20),
 	})
 	assert.NoError(t, err)
@@ -112,17 +112,17 @@ func TestControl_flatlyEnforcesDiskQuota(t *testing.T) {
 	assert.NoError(t, os.MkdirAll(dir2M, 0755))
 
 	var startingProjectId uint32 = 100
-	ctl, err := xfs.NewControl(xfs.ControlConfig{
+	ctl, err := quota.NewControl(quota.ControlConfig{
 		BasePath:          dir,
 		StartingProjectId: &startingProjectId,
 	})
 	assert.NoError(t, err)
 
-	assert.NoError(t, ctl.SetQuota(dir1M, xfs.Quota{
+	assert.NoError(t, ctl.SetQuota(dir1M, quota.Quota{
 		Size: 1 * (1 << 20),
 	}))
 
-	assert.NoError(t, ctl.SetQuota(dir2M, xfs.Quota{
+	assert.NoError(t, ctl.SetQuota(dir2M, quota.Quota{
 		Size: 1 * (2 << 20),
 	}))
 
@@ -147,17 +147,17 @@ func TestControl_flatlyEnforcesINodeQuota(t *testing.T) {
 	assert.NoError(t, os.MkdirAll(dirA, 0755))
 	assert.NoError(t, os.MkdirAll(dirB, 0755))
 
-	ctl, err := xfs.NewControl(xfs.ControlConfig{
+	ctl, err := quota.NewControl(quota.ControlConfig{
 		BasePath: dir,
 	})
 	assert.NoError(t, err)
 
-	assert.NoError(t, ctl.SetQuota(dirA, xfs.Quota{
+	assert.NoError(t, ctl.SetQuota(dirA, quota.Quota{
 		Size:  2 * (1 << 20),
 		INode: 30,
 	}))
 
-	assert.NoError(t, ctl.SetQuota(dirB, xfs.Quota{
+	assert.NoError(t, ctl.SetQuota(dirB, quota.Quota{
 		Size:  2 * (1 << 20),
 		INode: 300,
 	}))

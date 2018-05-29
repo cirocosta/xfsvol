@@ -2,7 +2,7 @@
 
 // xfs implements XFS project quota controls for setting quota limits
 // on a newly created directory.
-package xfs
+package quota
 
 import (
 	"io/ioutil"
