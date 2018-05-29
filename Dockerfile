@@ -22,4 +22,4 @@ RUN set -ex && \
 FROM busybox
 COPY --from=builder /usr/bin/xfsvol /xfsvol
 
-CMD [ "xfsvol" ]
+CMD [ "/xfsvol" ]
