@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/alexflint/arg"
 	"github.com/rs/zerolog"
 
 	v "github.com/docker/go-plugins-helpers/volume"
@@ -12,27 +13,38 @@ const (
 	socketAddress = "/run/docker/plugins/xfsvol.sock"
 )
 
+type config struct {
+	HostMountpoint string `arg:"env:HOST_MOUNTPOINT,help:xfs-mounted filesystem to create volumes"`
+	DefaultSize    string `arg:"env:DEFAULT_SIZE,help:default size to use as quota"`
+	Debug          bool   `arg:"env:DEBUG,help:enable debug logs"`
+}
+
 var (
-	version        string = "master-dev"
-	logger                = zerolog.New(os.Stdout)
-	debug                 = os.Getenv("DEBUG")
-	hostMountpoint        = os.Getenv("HOST_MOUNTPOINT")
-	defaultSize           = os.Getenv("DEFAULT_SIZE")
+	version string = "master-dev"
+	logger         = zerolog.New(os.Stdout)
+	args           = &config{
+		HostMountpoint: "/mnt/xfs/volumes",
+		DefaultSize:    "512M",
+		Debug:          false,
+	}
 )
 
 func main() {
+	arg.MustParse(args)
+
 	logger.Info().
 		Str("version", version).
 		Str("socket-address", socketAddress).
+		Interface("args", args).
 		Msg("initializing plugin")
 
-	if debug != "" {
+	if args.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
 	d, err := NewDriver(DriverConfig{
-		HostMountpoint: hostMountpoint,
-		DefaultSize:    defaultSize,
+		HostMountpoint: args.HostMountpoint,
+		DefaultSize:    args.DefaultSize,
 	})
 	if err != nil {
 		logger.Fatal().
