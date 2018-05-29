@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/alexflint/arg"
+	"github.com/alexflint/go-arg"
 	"github.com/rs/zerolog"
 
 	v "github.com/docker/go-plugins-helpers/volume"
