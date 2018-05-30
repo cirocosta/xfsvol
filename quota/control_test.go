@@ -25,11 +25,12 @@ var (
 // createControl is a factory that takes a controlType (either
 // `xfs` or `ext4`) and builds a Control implementor based on
 // the type of configuration passed.
-func createControl(controlType, root string) (control Control, err error) {
+func createControl(controlType, root string, arg ...interface{}) (control Control, err error) {
 	switch controlType {
 	case "xfs":
 		control, err = xfs.NewControl(xfs.ControlConfig{
-			Dir: root,
+			Dir:               root,
+			StartingProjectId: arg[0].(*uint32),
 		})
 		return
 	case "ext4":
@@ -46,20 +47,18 @@ func createControl(controlType, root string) (control Control, err error) {
 
 func TestControlImplementations(t *testing.T) {
 	var (
-		dir     string
-		err     error
-		control quota.Control
+		dir string
+		err error
+		ctl quota.Control
 	)
 
 	for controlType, controlMount := range controlTypesMounts {
 		t.Run(controlType+" succeeds if properly mounted directory", func(t *testing.T) {
-			dir, err := ioutil.TempDir(xfsMount, "")
+			dir, err = ioutil.TempDir(controlMount, "")
 			assert.NoError(t, err)
 			defer os.RemoveAll(dir)
 
-			_, err = quota.NewControl(quota.ControlConfig{
-				BasePath: dir,
-			})
+			_, err = createControl(controlType, dir)
 			assert.NoError(t, err)
 		})
 
@@ -68,13 +67,11 @@ func TestControlImplementations(t *testing.T) {
 			assert.NoError(t, err)
 			defer os.RemoveAll(dirOutside)
 
-			dir, err := ioutil.TempDir(xfsMount, "")
+			dir, err = ioutil.TempDir(controlMount, "")
 			assert.NoError(t, err)
 			defer os.RemoveAll(dir)
 
-			ctl, err := quota.NewControl(quota.ControlConfig{
-				BasePath: dir,
-			})
+			ctl, err = createControl(controlType, dir)
 			assert.NoError(t, err)
 
 			err = ctl.SetQuota(dirOutside, quota.Quota{
@@ -84,16 +81,13 @@ func TestControlImplementations(t *testing.T) {
 		})
 
 		t.Run(controlType+" fails to assign to inexistent dir in tree", func(t *testing.T) {
-
-			dir, err := ioutil.TempDir(xfsMount, "")
+			dir, err = ioutil.TempDir(controlMount, "")
 			assert.NoError(t, err)
 			defer os.RemoveAll(dir)
 
 			dirInside := path.Join(dir, "abc")
 
-			ctl, err := quota.NewControl(quota.ControlConfig{
-				BasePath: dir,
-			})
+			ctl, err = createControl(controlType, dir)
 			assert.NoError(t, err)
 
 			err = ctl.SetQuota(dirInside, quota.Quota{
@@ -103,8 +97,7 @@ func TestControlImplementations(t *testing.T) {
 		})
 
 		t.Run(controlType+" succeeds to assign to dir in tree", func(t *testing.T) {
-
-			dir, err := ioutil.TempDir(xfsMount, "")
+			dir, err = ioutil.TempDir(controlMount, "")
 			assert.NoError(t, err)
 			defer os.RemoveAll(dir)
 
@@ -112,9 +105,7 @@ func TestControlImplementations(t *testing.T) {
 			err = os.MkdirAll(dirInside, 0755)
 			assert.NoError(t, err)
 
-			ctl, err := quota.NewControl(quota.ControlConfig{
-				BasePath: dir,
-			})
+			ctl, err = createControl(controlType, dir)
 			assert.NoError(t, err)
 
 			err = ctl.SetQuota(dirInside, quota.Quota{
@@ -125,8 +116,7 @@ func TestControlImplementations(t *testing.T) {
 		})
 
 		t.Run(controlType+" flatly enforces disk quota", func(t *testing.T) {
-
-			dir, err := ioutil.TempDir(xfsMount, "")
+			dir, err = ioutil.TempDir(controlMount, "")
 			assert.NoError(t, err)
 			defer os.RemoveAll(dir)
 

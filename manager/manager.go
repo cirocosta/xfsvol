@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/cirocosta/xfsvol/quota"
+	"github.com/cirocosta/xfsvol/quota/xfs"
 	"github.com/pkg/errors"
 )
 
@@ -17,8 +18,8 @@ var (
 	NameRegex = regexp.MustCompile(`^[a-zA-Z0-9][\w\-]{1,250}$`)
 
 	ErrInvalidName = errors.Errorf("Invalid name")
-	ErrEmptyQuota  = errors.Errorf("Invalid quota - Can't be 0")
-	ErrEmptyINode  = errors.Errorf("Invalid inode - Can't be 0")
+	ErrEmptyQuota  = errors.Errorf("Invalid quota")
+	ErrEmptyINode  = errors.Errorf("Invalid inode")
 	ErrNotFound    = errors.Errorf("Volume not found")
 )
 
@@ -26,9 +27,17 @@ var (
 // volumes under a given base path. It takes the
 // responsability of 'CRUD'ing these volumes.
 type Manager struct {
-	quotaCtl *quota.Control
+	quotaCtl quota.Control
 	root     string
 }
+
+type FilesystemType uint8
+
+const (
+	UnknownFilesystemType FilesystemType = iota
+	Ext4FilesystemType
+	XfsFilesystemType
+)
 
 // Config represents the configuration to
 // create a manager. It takes a root directory
@@ -36,6 +45,7 @@ type Manager struct {
 // controls project quotas bellow it.
 type Config struct {
 	Root string
+	Type FilesystemType
 }
 
 // Volume represents a volume under a given
@@ -64,7 +74,12 @@ func New(cfg Config) (manager Manager, err error) {
 		return
 	}
 
-	quotaCtl, err := quota.NewControl(quota.ControlConfig{
+	if cfg.Type == Ext4FilesystemType {
+		err = errors.Errorf("fs type ext4 is not implemented yet")
+		return
+	}
+
+	quotaCtl, err := xfs.NewControl(xfs.ControlConfig{
 		BasePath: cfg.Root,
 	})
 	if err != nil {

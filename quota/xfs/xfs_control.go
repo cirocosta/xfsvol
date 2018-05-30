@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cirocosta/xfsvol/quota"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
@@ -123,7 +124,7 @@ func (c *Control) GetBackingFsBlockDev() (blockDev string) {
 //
 // TODO differentiate between real errors and no quota being set
 //	for the path.
-func (c *Control) GetQuota(targetPath string) (q *Quota, err error) {
+func (c *Control) GetQuota(targetPath string) (q *quota.Quota, err error) {
 	projectId, ok := c.projectIdCache[targetPath]
 	if !ok {
 		err = errors.Errorf(
@@ -144,7 +145,7 @@ func (c *Control) GetQuota(targetPath string) (q *Quota, err error) {
 
 // SetQuota assigns a unique project id to a directory and then set the
 // quota for that projectId.
-func (c *Control) SetQuota(targetPath string, quota Quota) (err error) {
+func (c *Control) SetQuota(targetPath string, quota quota.Quota) (err error) {
 	c.logger.Debug().Interface("cache", c.projectIdCache).Msg("will set quota")
 
 	projectId, ok := c.projectIdCache[targetPath]

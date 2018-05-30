@@ -8,6 +8,7 @@ import "C"
 import (
 	"unsafe"
 
+	"github.com/cirocosta/xfsvol/quota"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +20,7 @@ import (
 //
 // 0 values are meant to indicate that there's no quota (i.e, no
 // limits).
-func SetProjectQuota(blockDevice string, projectId uint32, q *Quota) (err error) {
+func SetProjectQuota(blockDevice string, projectId uint32, q *quota.Quota) (err error) {
 	if blockDevice == "" {
 		err = errors.Errorf("blockDevice must be specified")
 		return
@@ -80,7 +81,7 @@ func IsQuotaEnabled(blockDevice string) (isEnabled bool, err error) {
 //
 // The values prefixed with `Used` indicates how much has been
 // already used (statistics).
-func GetProjectQuota(blockDevice string, projectId uint32) (q *Quota, err error) {
+func GetProjectQuota(blockDevice string, projectId uint32) (q *quota.Quota, err error) {
 	if blockDevice == "" {
 		err = errors.Errorf("blockDevice must be specified")
 		return
@@ -88,13 +89,13 @@ func GetProjectQuota(blockDevice string, projectId uint32) (q *Quota, err error)
 
 	var (
 		blockDeviceString = C.CString(blockDevice)
-		quota             = new(C.struct_xfs_quota)
+		fsQuota           = new(C.struct_xfs_quota)
 	)
 	defer C.free(unsafe.Pointer(blockDeviceString))
 
 	ret, err := C.xfs_get_project_quota(blockDeviceString,
 		C.__u32(projectId),
-		quota)
+		fsQuota)
 	if ret == -1 {
 		err = errors.Wrapf(err,
 			"failed to retrieve project quota - prj=%d dev=%s",
@@ -102,11 +103,11 @@ func GetProjectQuota(blockDevice string, projectId uint32) (q *Quota, err error)
 		return
 	}
 
-	q = new(Quota)
-	q.INode = uint64(quota.inodes)
-	q.Size = uint64(quota.size)
-	q.UsedInode = uint64(quota.used_inodes)
-	q.UsedSize = uint64(quota.used_size)
+	q = new(quota.Quota)
+	q.INode = uint64(fsQuota.inodes)
+	q.Size = uint64(fsQuota.size)
+	q.UsedInode = uint64(fsQuota.used_inodes)
+	q.UsedSize = uint64(fsQuota.used_size)
 
 	return
 }
